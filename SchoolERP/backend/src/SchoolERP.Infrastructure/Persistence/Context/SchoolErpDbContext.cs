@@ -63,6 +63,7 @@ public sealed class SchoolErpDbContext(
         try { return base.SaveChanges(acceptAllChangesOnSuccess); }
         catch (DbUpdateConcurrencyException exception) { throw new ConcurrencyConflictException(exception); }
         catch (DbUpdateException exception) when (IsTenantSlugConflict(exception)) { throw new TenantSlugConflictException(); }
+        catch (DbUpdateException exception) when (IsSchoolCodeConflict(exception)) { throw new SchoolCodeConflictException(); }
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -75,6 +76,7 @@ public sealed class SchoolErpDbContext(
         try { return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken); }
         catch (DbUpdateConcurrencyException exception) { throw new ConcurrencyConflictException(exception); }
         catch (DbUpdateException exception) when (IsTenantSlugConflict(exception)) { throw new TenantSlugConflictException(); }
+        catch (DbUpdateException exception) when (IsSchoolCodeConflict(exception)) { throw new SchoolCodeConflictException(); }
     }
 
     private static bool IsTenantSlugConflict(DbUpdateException exception) =>
@@ -82,5 +84,12 @@ public sealed class SchoolErpDbContext(
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
             ConstraintName: "ux_tenants_slug"
+        };
+
+    private static bool IsSchoolCodeConflict(DbUpdateException exception) =>
+        exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "ux_schools_tenant_id_code"
         };
 }

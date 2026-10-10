@@ -19,7 +19,7 @@ namespace SchoolERP.IntegrationTests;
 public sealed class PersistenceTests(PostgresFixture database)
 {
     private static Tenant NewTenant() => Tenant.Create("Integration Test Tenant", "test-" + Guid.NewGuid().ToString("N"));
-    private static School NewSchool(Tenant tenant, string code = "MAIN") => new() { Tenant = tenant, TenantId = tenant.Id, Name = "Test School", Code = code };
+    private static School NewSchool(Tenant tenant, string code = "MAIN") => School.Create(tenant, "Test School", code);
     private static Campus NewCampus(School school, string code = "MAIN") => new() { School = school, SchoolId = school.Id, TenantId = school.TenantId, Name = "Test Campus", Code = code };
 
     [PostgresFact] public async Task CanConnectAndInitialMigrationCreatesFoundationTables()
@@ -45,7 +45,7 @@ public sealed class PersistenceTests(PostgresFixture database)
         context.Campuses.Add(campus); await context.SaveChangesAsync();
         Assert.NotEqual(Guid.Empty, tenant.Id); Assert.Equal(DateTimeKind.Utc, school.CreatedAt.Kind);
         var createdAt = school.CreatedAt;
-        school.Name = "Updated School"; school.CreatedAt = DateTime.UtcNow.AddYears(-1);
+        UpdateSchoolName(school, "Updated School"); school.CreatedAt = DateTime.UtcNow.AddYears(-1);
         await context.SaveChangesAsync(); context.ChangeTracker.Clear();
         var saved = await context.Schools.SingleAsync(entity => entity.Id == school.Id);
         Assert.Equal(createdAt.Ticks / 10, saved.CreatedAt.Ticks / 10); // PostgreSQL microsecond precision.
@@ -133,10 +133,10 @@ public sealed class PersistenceTests(PostgresFixture database)
     [PostgresFact] public async Task MissingTenantAndCrossTenantWritesAreRejected()
     {
         await using var missing = database.CreateContext();
-        missing.Schools.Add(new School { TenantId = Guid.NewGuid(), Name = "Invalid", Code = "MAIN" });
+        missing.Schools.Add(School.Create(Guid.NewGuid(), "Invalid", "MAIN"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => missing.SaveChangesAsync());
         await using var mismatched = database.CreateContext(Guid.NewGuid());
-        mismatched.Schools.Add(new School { TenantId = Guid.NewGuid(), Name = "Invalid", Code = "MAIN" });
+        mismatched.Schools.Add(School.Create(Guid.NewGuid(), "Invalid", "MAIN"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => mismatched.SaveChangesAsync());
     }
 
@@ -145,7 +145,7 @@ public sealed class PersistenceTests(PostgresFixture database)
         var tenant = NewTenant();
         await using (var setup = database.CreateContext()) { setup.Tenants.Add(tenant); await setup.SaveChangesAsync(); }
         await using var context = database.CreateContext(tenant.Id);
-        var school = new School { TenantId = tenant.Id, Name = "Scoped School", Code = "MAIN" };
+        var school = School.Create(tenant.Id, "Scoped School", "MAIN");
         context.Schools.Add(school); await context.SaveChangesAsync();
         Assert.Equal(school.Id, (await context.Schools.SingleAsync()).Id);
     }
@@ -155,7 +155,7 @@ public sealed class PersistenceTests(PostgresFixture database)
         var tenant = NewTenant();
         await using (var setup = database.CreateContext(platformAccess: true)) { setup.Tenants.Add(tenant); await setup.SaveChangesAsync(); }
         await using var context = database.CreateContext(tenant.Id);
-        var school = new School { Name = "Assigned School", Code = "ASSIGNED" };
+        var school = School.CreateForCurrentTenant("Assigned School", "ASSIGNED");
         context.Schools.Add(school); await context.SaveChangesAsync();
         Assert.Equal(tenant.Id, school.TenantId);
     }
@@ -166,11 +166,11 @@ public sealed class PersistenceTests(PostgresFixture database)
         await using (var setup = database.CreateContext(platformAccess: true)) { setup.Schools.Add(school); await setup.SaveChangesAsync(); }
 
         await using var add = database.CreateContext(Guid.NewGuid());
-        add.Schools.Add(new School { TenantId = school.TenantId, Name = "Wrong", Code = "WRONG" });
+        add.Schools.Add(School.Create(school.TenantId, "Wrong", "WRONG"));
         await Assert.ThrowsAsync<TenantMismatchException>(() => add.SaveChangesAsync());
 
         await using var update = database.CreateContext(Guid.NewGuid());
-        update.Attach(school); school.Name = "Cross tenant update";
+        update.Attach(school); UpdateSchoolName(school, "Cross tenant update");
         await Assert.ThrowsAsync<TenantMismatchException>(() => update.SaveChangesAsync());
 
         await using var delete = database.CreateContext(Guid.NewGuid());
@@ -208,8 +208,8 @@ public sealed class PersistenceTests(PostgresFixture database)
         await using var second = database.CreateContext(platformAccess: true);
         var firstCopy = await first.Schools.SingleAsync(entity => entity.Id == school.Id);
         var secondCopy = await second.Schools.SingleAsync(entity => entity.Id == school.Id);
-        firstCopy.Name = "First update"; await first.SaveChangesAsync();
-        secondCopy.Name = "Second update";
+        UpdateSchoolName(firstCopy, "First update"); await first.SaveChangesAsync();
+        UpdateSchoolName(secondCopy, "Second update");
         await Assert.ThrowsAsync<ConcurrencyConflictException>(() => second.SaveChangesAsync());
     }
 
@@ -265,6 +265,12 @@ public sealed class PersistenceTests(PostgresFixture database)
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
         Assert.Equal(sqlState, Assert.IsType<PostgresException>(exception.InnerException).SqlState);
     }
+
+    private static void UpdateSchoolName(School school, string name) => school.UpdateProfile(
+        name, school.ShortName, school.RegistrationNumber, school.AffiliationNumber, school.BoardCode, school.BoardType,
+        school.Email, school.Phone, school.AlternatePhone, school.Website, school.AddressLine1, school.AddressLine2,
+        school.City, school.State, school.PostalCode, school.CountryCode, school.LogoUrl, school.TimeZoneId,
+        school.DefaultCurrency, school.PrincipalName);
 
     [PostgresFact] public async Task DemoSeedRequiresExplicitDevelopmentFlagAndIsIdempotent()
     {

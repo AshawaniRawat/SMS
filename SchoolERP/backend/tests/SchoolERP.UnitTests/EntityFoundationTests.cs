@@ -63,7 +63,7 @@ public sealed class EntityFoundationTests
     public void TenantOwnershipAndSoftDeleteRemainExplicit()
     {
         Assert.False((object)Tenant.Create("Test", "test") is ITenantEntity);
-        Assert.IsAssignableFrom<ITenantEntity>(new School());
+        Assert.IsAssignableFrom<ITenantEntity>(School.Create(Guid.NewGuid(), "Test", "TEST"));
         Assert.IsAssignableFrom<ITenantEntity>(new Campus());
         Assert.False((object)Tenant.Create("Test", "test-two") is ISoftDeletableEntity);
     }
@@ -83,7 +83,7 @@ public sealed class EntityFoundationTests
     [Fact]
     public void CodesAreTrimmedAndUppercase()
     {
-        Assert.Equal("MAIN", new School { Code = " main " }.Code);
+        Assert.Equal("MAIN", School.Create(Guid.NewGuid(), "Test", " main ").Code);
         Assert.Equal("NORTH", new Campus { Code = " north " }.Code);
     }
 
@@ -95,8 +95,8 @@ public sealed class EntityFoundationTests
         }
         else if (entityName == "school")
         {
-            var entity = new School();
-            if (property == "name") entity.Name = "   "; else entity.Code = "   ";
+            if (property == "name") School.Create(Guid.NewGuid(), "   ", "VALID");
+            else School.Create(Guid.NewGuid(), "Valid", "   ");
         }
         else
         {

@@ -17,7 +17,7 @@ public sealed class PersistenceInterceptorTests
     {
         var tenantId = Guid.NewGuid();
         await using var context = CreateContext(tenantId);
-        var school = new School { Name = "Assigned", Code = "MAIN" };
+        var school = School.CreateForCurrentTenant("Assigned", "MAIN");
         context.Schools.Add(school);
         await context.SaveChangesAsync();
         Assert.Equal(tenantId, school.TenantId);
@@ -27,7 +27,7 @@ public sealed class PersistenceInterceptorTests
     public async Task MismatchedTenantIsRejected()
     {
         await using var context = CreateContext(Guid.NewGuid());
-        context.Schools.Add(new School { TenantId = Guid.NewGuid(), Name = "Wrong", Code = "MAIN" });
+        context.Schools.Add(School.Create(Guid.NewGuid(), "Wrong", "MAIN"));
         await Assert.ThrowsAsync<TenantMismatchException>(() => context.SaveChangesAsync());
     }
 
@@ -36,7 +36,7 @@ public sealed class PersistenceInterceptorTests
     {
         var tenantId = Guid.NewGuid();
         await using var context = CreateContext(tenantId);
-        var school = new School { TenantId = tenantId, Name = "Deleted", Code = "MAIN", CreatedAt = DateTime.UtcNow.AddDays(-1) };
+        var school = School.Create(tenantId, "Deleted", "MAIN"); school.CreatedAt = DateTime.UtcNow.AddDays(-1);
         context.Attach(school); context.Remove(school);
         await context.SaveChangesAsync();
         Assert.Equal(EntityState.Modified, context.Entry(school).State);

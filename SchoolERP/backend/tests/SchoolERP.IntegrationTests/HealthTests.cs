@@ -6,16 +6,27 @@ using Microsoft.Extensions.Configuration;
 using Xunit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using SchoolERP.Application.Abstractions;
 using Npgsql;
 
 namespace SchoolERP.IntegrationTests;
 
-public sealed class ApiFactory(string? connectionString = null, string environment = "Development", bool initializeDatabase = false) : WebApplicationFactory<Program>
+public sealed class ApiFactory(string? connectionString = null, string environment = "Development", bool initializeDatabase = false,
+    Guid? tenantId = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(environment);
-        builder.ConfigureServices(services => services.AddControllers().AddApplicationPart(typeof(DatabaseFailureTestController).Assembly));
+        builder.ConfigureServices(services =>
+        {
+            services.AddControllers().AddApplicationPart(typeof(DatabaseFailureTestController).Assembly);
+            if (tenantId.HasValue)
+            {
+                services.RemoveAll<ICurrentTenant>();
+                services.AddScoped<ICurrentTenant>(_ => new TestCurrentTenant(tenantId));
+            }
+        });
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DefaultConnection"] = connectionString ?? "Host=localhost;Database=unused;Username=unused",
