@@ -1,0 +1,33 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using SchoolERP.Application.Features.Authentication;
+using SchoolERP.Shared.Models;
+
+namespace SchoolERP.Api.Controllers.v1;
+
+[ApiController]
+[Route("api/v1/auth")]
+public sealed class AuthController(IAuthenticationService authenticationService) : ControllerBase
+{
+    /// <summary>Validates email, password, lockout, account, and organization eligibility. No token is issued in P1-11.</summary>
+    [HttpPost("login")]
+    [EnableRateLimiting("login")]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(LoginRequest request, CancellationToken cancellationToken)
+    {
+        var result = await authenticationService.AuthenticateAsync(request, cancellationToken);
+        if (result.IsSuccess) return Ok(ApiResponse<LoginResponse>.Ok(result.Value!));
+        var body = ApiResponse<LoginResponse>.Fail([result.Error ?? "Authentication failed."], result.ErrorCode);
+        return result.ErrorCode switch
+        {
+            AuthenticationErrorCodes.InvalidRequest => BadRequest(body),
+            AuthenticationErrorCodes.InvalidCredentials => Unauthorized(body),
+            AuthenticationErrorCodes.PersistenceFailure => StatusCode(StatusCodes.Status500InternalServerError, body),
+            _ => StatusCode(StatusCodes.Status403Forbidden, body)
+        };
+    }
+}

@@ -84,6 +84,8 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
         Status = UserAccountStatus.Deactivated; IsActive = false; DeactivatedAt = Utc(occurredOnUtc);
     }
 
+    public void RecordSuccessfulLogin(DateTime occurredOnUtc) => LastLoginAt = Utc(occurredOnUtc);
+
     private static void ValidateScope(Guid? tenantId, Guid? schoolId, Guid? campusId)
     {
         if (!tenantId.HasValue && schoolId.HasValue) throw new DomainException("A school-scoped user requires a tenant.");

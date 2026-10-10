@@ -13,6 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Identity;
 using SchoolERP.Application.Features.Identity;
 using SchoolERP.Infrastructure.Identity;
+using SchoolERP.Application.Features.Authentication;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -68,6 +69,7 @@ public static class DependencyInjection
             options.SignIn.RequireConfirmedEmail = identitySettings.RequireConfirmedEmail;
         }).AddRoles<ApplicationRole>().AddEntityFrameworkStores<SchoolErpDbContext>().AddDefaultTokenProviders();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
+        services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

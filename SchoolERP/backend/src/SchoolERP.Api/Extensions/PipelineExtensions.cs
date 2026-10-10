@@ -10,6 +10,7 @@ public static class PipelineExtensions
         if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
         else { app.UseHsts(); app.UseHttpsRedirection(); }
         app.UseCors("Frontend");
+        app.UseRateLimiter();
         app.MapControllers();
         app.MapHealthChecks("/api/health", new HealthCheckOptions
         {

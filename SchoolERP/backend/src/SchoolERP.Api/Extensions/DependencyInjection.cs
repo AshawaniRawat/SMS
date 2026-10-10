@@ -1,5 +1,6 @@
 using SchoolERP.Api.Configuration;
 using SchoolERP.Api.Middleware;
+using System.Threading.RateLimiting;
 namespace SchoolERP.Api.Extensions;
 public static class DependencyInjection
 {
@@ -9,6 +10,19 @@ public static class DependencyInjection
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
         services.AddProblemDetails();
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("login", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                }));
+        });
         services.AddExceptionHandler<PersistenceExceptionHandler>();
         services.AddExceptionHandler<DatabaseExceptionHandler>();
         services.AddHealthChecks();
