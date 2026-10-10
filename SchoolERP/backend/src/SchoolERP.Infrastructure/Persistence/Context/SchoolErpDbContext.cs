@@ -5,11 +5,13 @@ using SchoolERP.Domain.Interfaces;
 using SchoolERP.Application.Exceptions;
 using Npgsql;
 using System.Reflection;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using SchoolERP.Infrastructure.Identity;
 namespace SchoolERP.Infrastructure.Persistence.Context;
 public sealed class SchoolErpDbContext(
     DbContextOptions<SchoolErpDbContext> options,
     ICurrentTenant currentTenant,
-    IPlatformDataAccess platformDataAccess) : DbContext(options), IApplicationDbContext, IUnitOfWork
+    IPlatformDataAccess platformDataAccess) : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>(options), IApplicationDbContext, IUnitOfWork
 {
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<School> Schools => Set<School>();

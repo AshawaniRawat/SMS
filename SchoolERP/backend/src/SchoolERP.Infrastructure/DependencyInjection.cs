@@ -10,6 +10,9 @@ using SchoolERP.Infrastructure.Persistence.Seed;
 using SchoolERP.Infrastructure.Tenancy;
 using SchoolERP.Infrastructure.Health;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Identity;
+using SchoolERP.Application.Features.Identity;
+using SchoolERP.Infrastructure.Identity;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -26,6 +29,9 @@ public static class DependencyInjection
         services.AddScoped<ConcurrencyTokenInterceptor>();
         services.AddScoped<DatabaseSeeder>();
         services.AddSingleton(TimeProvider.System);
+        var identitySettings = configuration.GetSection(IdentitySettings.SectionName).Get<IdentitySettings>() ?? new IdentitySettings();
+        services.Configure<IdentitySettings>(configuration.GetSection(IdentitySettings.SectionName));
+        services.AddDataProtection();
         services.AddDbContext<SchoolErpDbContext>((provider, options) =>
         {
             var database = provider.GetRequiredService<IOptions<DatabaseOptions>>().Value;
@@ -47,6 +53,21 @@ public static class DependencyInjection
         });
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<SchoolErpDbContext>());
         services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<SchoolErpDbContext>());
+        services.AddIdentityCore<ApplicationUser>(options =>
+        {
+            options.User.RequireUniqueEmail = true;
+            options.Password.RequiredLength = identitySettings.PasswordRequiredLength;
+            options.Password.RequiredUniqueChars = identitySettings.PasswordRequiredUniqueChars;
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Lockout.AllowedForNewUsers = true;
+            options.Lockout.MaxFailedAccessAttempts = identitySettings.MaxFailedAccessAttempts;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(identitySettings.DefaultLockoutMinutes);
+            options.SignIn.RequireConfirmedEmail = identitySettings.RequireConfirmedEmail;
+        }).AddRoles<ApplicationRole>().AddEntityFrameworkStores<SchoolErpDbContext>().AddDefaultTokenProviders();
+        services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }
