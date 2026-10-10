@@ -8,4 +8,6 @@ public sealed class IdentitySettings
     public int PasswordRequiredUniqueChars { get; set; } = 4;
     public int MaxFailedAccessAttempts { get; set; } = 5;
     public int DefaultLockoutMinutes { get; set; } = 15;
+    public bool ActivateNewUsersImmediately { get; set; }
+    public bool AutoConfirmAdminCreatedUsers { get; set; }
 }

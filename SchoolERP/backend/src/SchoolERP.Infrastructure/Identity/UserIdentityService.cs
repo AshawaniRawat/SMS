@@ -2,6 +2,8 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Npgsql;
 using SchoolERP.Application.Common.Pagination;
 using SchoolERP.Application.Features.Identity;
 using SchoolERP.Domain.Enums;
@@ -11,26 +13,54 @@ using SchoolERP.Shared.Results;
 namespace SchoolERP.Infrastructure.Identity;
 
 public sealed class UserIdentityService(UserManager<ApplicationUser> userManager, SchoolErpDbContext context,
-    IValidator<CreateUserRequest> validator, TimeProvider timeProvider, ILogger<UserIdentityService> logger) : IUserIdentityService
+    IValidator<CreatePlatformUserRequest> platformValidator, IValidator<CreateTenantUserRequest> tenantValidator,
+    IOptions<IdentitySettings> settings, TimeProvider timeProvider, ILogger<UserIdentityService> logger) : IUserIdentityService
 {
-    public async Task<Result<Guid>> CreateUserAsync(CreateUserRequest request, CancellationToken ct = default)
+    public async Task<Result<UserSummaryDto>> CreatePlatformUserAsync(CreatePlatformUserRequest request, CancellationToken ct = default)
     {
-        var validation = await validator.ValidateAsync(request, ct);
-        if (!validation.IsValid) return Result<Guid>.Fail(string.Join(" ", validation.Errors.Select(x => x.ErrorMessage).Distinct()));
+        var validation = await platformValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid) return Invalid(validation.Errors.Select(x => x.ErrorMessage));
+        return await CreateAsync(request.FirstName, request.LastName, request.Email, request.Password,
+            request.DisplayName, request.PhoneNumber, null, null, null, ct);
+    }
+
+    public async Task<Result<UserSummaryDto>> CreateTenantUserAsync(CreateTenantUserRequest request, CancellationToken ct = default)
+    {
+        var validation = await tenantValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid) return Invalid(validation.Errors.Select(x => x.ErrorMessage));
         var scopeError = await ValidateScopeAsync(request, ct);
-        if (scopeError is not null) return Result<Guid>.Fail(scopeError);
-        var email = request.Email.Trim().ToLowerInvariant();
-        if (!await IsEmailUniqueAsync(email, ct)) return Result<Guid>.Fail("An account with this email address already exists.");
-        var user = ApplicationUser.Create(request.FirstName, request.LastName, email, request.TenantId, request.SchoolId, request.CampusId, request.ActivateImmediately);
-        var result = await userManager.CreateAsync(user, request.Password);
+        if (scopeError is not null) return Result<UserSummaryDto>.Fail(scopeError.Value.Message, scopeError.Value.Code);
+        return await CreateAsync(request.FirstName, request.LastName, request.Email, request.Password,
+            request.DisplayName, request.PhoneNumber, request.TenantId, request.SchoolId, request.CampusId, ct);
+    }
+
+    private async Task<Result<UserSummaryDto>> CreateAsync(string firstName, string lastName, string inputEmail, string password,
+        string? displayName, string? phoneNumber, Guid? tenantId, Guid? schoolId, Guid? campusId, CancellationToken ct)
+    {
+        var email = inputEmail.Trim().ToLowerInvariant();
+        if (!await IsEmailUniqueAsync(email, ct)) return Result<UserSummaryDto>.Fail("An account with this email address already exists.", UserRegistrationErrorCodes.EmailAlreadyExists);
+        var options = settings.Value;
+        var user = ApplicationUser.Create(firstName, lastName, email, tenantId, schoolId, campusId,
+            options.ActivateNewUsersImmediately, displayName, phoneNumber, options.AutoConfirmAdminCreatedUsers);
+        IdentityResult result;
+        try { result = await userManager.CreateAsync(user, password); }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_users_normalized_email" or "ux_users_normalized_user_name" })
+        {
+            logger.LogWarning("Identity user creation encountered a duplicate normalized credential for email {Email}", email);
+            return Result<UserSummaryDto>.Fail("An account with this email address already exists.", UserRegistrationErrorCodes.EmailAlreadyExists);
+        }
         if (!result.Succeeded)
         {
             var error = SafeErrors(result);
+            var code = result.Errors.Any(x => x.Code is "DuplicateEmail" or "DuplicateUserName")
+                ? UserRegistrationErrorCodes.EmailAlreadyExists : UserRegistrationErrorCodes.IdentityRejected;
             logger.LogWarning("Identity user creation failed for email {Email}: {ErrorCodes}", email, string.Join(",", result.Errors.Select(x => x.Code)));
-            return Result<Guid>.Fail(error);
+            return Result<UserSummaryDto>.Fail(error, code);
         }
-        logger.LogInformation("Identity user {UserId} created", user.Id);
-        return Result<Guid>.Ok(user.Id);
+        logger.LogInformation("Identity user {UserId} created with TenantId {TenantId}, SchoolId {SchoolId}, CampusId {CampusId}",
+            user.Id, user.TenantId, user.SchoolId, user.CampusId);
+        return Result<UserSummaryDto>.Ok(Map(user));
     }
 
     public async Task<bool> IsEmailUniqueAsync(string email, CancellationToken ct = default) =>
@@ -70,26 +100,28 @@ public sealed class UserIdentityService(UserManager<ApplicationUser> userManager
         return Result<bool>.Ok(true);
     }
 
-    private async Task<string?> ValidateScopeAsync(CreateUserRequest r, CancellationToken ct)
+    private async Task<(string Message, string Code)?> ValidateScopeAsync(CreateTenantUserRequest r, CancellationToken ct)
     {
-        if (!r.TenantId.HasValue) return r.SchoolId.HasValue || r.CampusId.HasValue ? "Platform users cannot be assigned to a school or campus." : null;
         var tenant = await context.Tenants.AsNoTracking().IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == r.TenantId, ct);
-        if (tenant is null) return "The selected tenant does not exist.";
-        if (tenant.Status is TenantStatus.Suspended or TenantStatus.Archived) return "New users cannot be created for a suspended or archived tenant.";
+        if (tenant is null) return ("The selected tenant was not found.", UserRegistrationErrorCodes.ScopeNotFound);
+        if (tenant.Status is TenantStatus.Suspended or TenantStatus.Archived) return ("New users cannot be created for this tenant.", UserRegistrationErrorCodes.ScopeNotOperational);
         if (r.SchoolId.HasValue)
         {
             var school = await context.Schools.AsNoTracking().IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == r.SchoolId, ct);
-            if (school is null || school.TenantId != r.TenantId) return "The selected school does not belong to the tenant.";
-            if (school.Status is SchoolStatus.Suspended or SchoolStatus.Archived) return "New users cannot be assigned to a suspended or archived school.";
+            if (school is null || school.TenantId != r.TenantId) return ("The selected school was not found.", UserRegistrationErrorCodes.ScopeNotFound);
+            if (school.Status is SchoolStatus.Suspended or SchoolStatus.Archived) return ("New users cannot be assigned to this school.", UserRegistrationErrorCodes.ScopeNotOperational);
         }
         if (r.CampusId.HasValue)
         {
             var campus = await context.Campuses.AsNoTracking().IgnoreQueryFilters().SingleOrDefaultAsync(x => x.Id == r.CampusId, ct);
-            if (campus is null || campus.TenantId != r.TenantId || campus.SchoolId != r.SchoolId) return "The selected campus does not belong to the tenant and school.";
-            if (campus.Status == CampusStatus.Archived) return "New users cannot be assigned to an archived campus.";
+            if (campus is null || campus.TenantId != r.TenantId || campus.SchoolId != r.SchoolId) return ("The selected campus was not found.", UserRegistrationErrorCodes.ScopeNotFound);
+            if (campus.Status is CampusStatus.Suspended or CampusStatus.Archived) return ("New users cannot be assigned to this campus.", UserRegistrationErrorCodes.ScopeNotOperational);
         }
         return null;
     }
+
+    private static Result<UserSummaryDto> Invalid(IEnumerable<string> errors) =>
+        Result<UserSummaryDto>.Fail(string.Join(" ", errors.Distinct()), UserRegistrationErrorCodes.Validation);
 
     private static string SafeErrors(IdentityResult result) => string.Join(" ", result.Errors.Select(x => x.Code switch
     {
@@ -102,6 +134,6 @@ public sealed class UserIdentityService(UserManager<ApplicationUser> userManager
         _ => x.Description
     }).Distinct());
     private DateTime Now() => timeProvider.GetUtcNow().UtcDateTime;
-    private static UserSummaryDto Map(ApplicationUser x) => new(x.Id, x.FirstName, x.LastName, x.Email!, x.DisplayName, x.TenantId, x.SchoolId, x.CampusId, x.Status, x.IsActive, x.EmailConfirmed, x.TwoFactorEnabled, x.CreatedAt);
-    private static System.Linq.Expressions.Expression<Func<ApplicationUser, UserSummaryDto>> Project() => x => new(x.Id, x.FirstName, x.LastName, x.Email!, x.DisplayName, x.TenantId, x.SchoolId, x.CampusId, x.Status, x.IsActive, x.EmailConfirmed, x.TwoFactorEnabled, x.CreatedAt);
+    private static UserSummaryDto Map(ApplicationUser x) => new(x.Id, x.FirstName, x.LastName, x.Email!, x.DisplayName, x.PhoneNumber, x.TenantId, x.SchoolId, x.CampusId, x.Status, x.IsActive, x.EmailConfirmed, x.CreatedAt);
+    private static System.Linq.Expressions.Expression<Func<ApplicationUser, UserSummaryDto>> Project() => x => new(x.Id, x.FirstName, x.LastName, x.Email!, x.DisplayName, x.PhoneNumber, x.TenantId, x.SchoolId, x.CampusId, x.Status, x.IsActive, x.EmailConfirmed, x.CreatedAt);
 }

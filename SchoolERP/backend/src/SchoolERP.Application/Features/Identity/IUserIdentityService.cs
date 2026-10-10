@@ -5,7 +5,8 @@ namespace SchoolERP.Application.Features.Identity;
 
 public interface IUserIdentityService
 {
-    Task<Result<Guid>> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default);
+    Task<Result<UserSummaryDto>> CreatePlatformUserAsync(CreatePlatformUserRequest request, CancellationToken cancellationToken = default);
+    Task<Result<UserSummaryDto>> CreateTenantUserAsync(CreateTenantUserRequest request, CancellationToken cancellationToken = default);
     Task<bool> IsEmailUniqueAsync(string email, CancellationToken cancellationToken = default);
     Task<UserSummaryDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<UserSummaryDto?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);

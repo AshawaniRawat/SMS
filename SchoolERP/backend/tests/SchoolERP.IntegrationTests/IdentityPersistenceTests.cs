@@ -72,16 +72,18 @@ public sealed class IdentityPersistenceTests(PostgresFixture fixture)
         var campusA = Campus.Create(schoolA, "Campus A", "A");
         context.AddRange(tenantA, tenantB, schoolA, schoolB, campusA); await context.SaveChangesAsync();
         using var manager = CreateManager(context);
-        var service = new UserIdentityService(manager, context, new CreateUserRequestValidator(), TimeProvider.System,
+        var service = new UserIdentityService(manager, context, new CreatePlatformUserRequestValidator(),
+            new CreateTenantUserRequestValidator(), Options.Create(new IdentitySettings()), TimeProvider.System,
             NullLogger<UserIdentityService>.Instance);
-        var valid = await service.CreateUserAsync(new("Valid", "Tenant", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1", tenantA.Id, schoolA.Id, campusA.Id));
+        var valid = await service.CreateTenantUserAsync(new(tenantA.Id, "Valid", "Tenant", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1", schoolA.Id, campusA.Id));
         Assert.True(valid.IsSuccess, valid.Error);
-        var crossTenant = await service.CreateUserAsync(new("Wrong", "School", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1", tenantA.Id, schoolB.Id));
+        var crossTenant = await service.CreateTenantUserAsync(new(tenantA.Id, "Wrong", "School", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1", schoolB.Id));
         Assert.False(crossTenant.IsSuccess);
-        var wrongSchool = await service.CreateUserAsync(new("Wrong", "Campus", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1", tenantA.Id, schoolB.Id, campusA.Id));
+        var wrongSchool = await service.CreateTenantUserAsync(new(tenantA.Id, "Wrong", "Campus", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1", schoolB.Id, campusA.Id));
         Assert.False(wrongSchool.IsSuccess);
-        var platform = await service.CreateUserAsync(new("Platform", "User", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1"));
+        var platform = await service.CreatePlatformUserAsync(new("Platform", "User", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1"));
         Assert.True(platform.IsSuccess, platform.Error);
+        Assert.Null(platform.Value!.TenantId); Assert.Null(platform.Value.SchoolId); Assert.Null(platform.Value.CampusId);
     }
 
     private static UserManager<ApplicationUser> CreateManager(SchoolErpDbContext context)

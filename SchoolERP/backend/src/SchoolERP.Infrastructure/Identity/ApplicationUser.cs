@@ -30,16 +30,18 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
     public Campus? Campus { get; private set; }
 
     public static ApplicationUser Create(string firstName, string lastName, string email,
-        Guid? tenantId = null, Guid? schoolId = null, Guid? campusId = null, bool activate = false)
+        Guid? tenantId = null, Guid? schoolId = null, Guid? campusId = null, bool activate = false,
+        string? displayName = null, string? phoneNumber = null, bool emailConfirmed = false)
     {
         ValidateScope(tenantId, schoolId, campusId);
         var normalizedEmail = Required(email, 320, nameof(Email)).ToLowerInvariant();
         var user = new ApplicationUser
         {
             Id = Guid.NewGuid(), Email = normalizedEmail, UserName = normalizedEmail,
-            TenantId = tenantId, SchoolId = schoolId, CampusId = campusId
+            TenantId = tenantId, SchoolId = schoolId, CampusId = campusId,
+            EmailConfirmed = emailConfirmed, LockoutEnabled = true
         };
-        user.UpdateProfile(firstName, lastName, null, null);
+        user.UpdateProfile(firstName, lastName, displayName, phoneNumber);
         if (activate) user.Activate();
         return user;
     }
