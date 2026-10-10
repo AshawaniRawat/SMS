@@ -1,0 +1,2 @@
+import { Link } from 'react-router-dom';
+export function UnauthorizedPage() { return <div className="grid min-h-screen place-items-center bg-background text-center"><div><h1 className="text-3xl font-semibold">Access restricted</h1><p className="mt-3 text-muted-foreground">Your account does not have access to this page.</p><Link to="/" className="mt-6 inline-block text-primary">Return to dashboard</Link></div></div>; }

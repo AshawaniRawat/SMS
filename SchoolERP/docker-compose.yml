@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: schoolerp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres # Local development only
+    ports:
+      - "5432:5432"
+    volumes:
+      # PostgreSQL 18 uses a major-version-specific PGDATA underneath this parent directory.
+      - schoolerp_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d schoolerp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  schoolerp_postgres_data:

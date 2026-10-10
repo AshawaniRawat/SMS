@@ -1,0 +1,26 @@
+name: Build and test
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SchoolERP
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: SchoolERP/frontend/package-lock.json
+      - run: dotnet restore backend/SchoolERP.sln
+      - run: dotnet build backend/SchoolERP.sln --no-restore --configuration Release
+      - run: dotnet test backend/SchoolERP.sln --no-build --configuration Release
+        env:
+          SCHOOLERP_TEST_USE_CONTAINERS: 'true'
+      - run: npm ci --prefix frontend
+      - run: npm run build --prefix frontend
+      - run: docker compose config --quiet

@@ -1,0 +1,18 @@
+import { useState } from 'react';
+import { NavLink, Outlet, Link } from 'react-router-dom';
+import { GraduationCap, LayoutDashboard, Building2, Menu, X, LogOut, Bell, ChevronDown } from 'lucide-react';
+export function AppLayout() {
+  const [open, setOpen] = useState(false);
+  return <div className="min-h-screen bg-background text-foreground">
+    {open && <button aria-label="Close navigation overlay" className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={() => setOpen(false)} />}
+    <aside className={'fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-border bg-card transition-transform md:translate-x-0 ' + (open ? 'translate-x-0' : '-translate-x-full')}>
+      <Link to="/" className="flex items-center gap-3 px-7 py-8"><span className="rounded-xl bg-primary p-2 text-primary-foreground"><GraduationCap size={23} /></span><span className="text-xl font-bold tracking-tight">SchoolERP<span className="block text-[10px] font-medium uppercase tracking-[.2em] text-muted-foreground">School workspace</span></span></Link>
+      <button className="absolute right-3 top-3 md:hidden" aria-label="Close navigation" onClick={() => setOpen(false)}><X /></button>
+      <p className="px-7 pb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Workspace</p>
+      <nav className="px-4"><NavLink to="/" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg bg-primary/10 px-4 py-3 text-sm font-semibold text-primary"><LayoutDashboard size={18}/> Overview</NavLink></nav>
+      <div className="mx-7 mt-8 flex items-start gap-3 text-muted-foreground"><Building2 size={18}/><div className="text-sm">Platform modules<p className="mt-1 text-xs">Coming in future phases</p></div></div>
+      <div className="mx-5 mt-auto mb-5 rounded-xl border border-border p-4"><span className="text-xs font-semibold">Your foundation is ready</span><p className="mt-2 text-xs leading-5 text-muted-foreground">A shared workspace for your school community.</p><span className="mt-3 inline-block rounded bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">P1-01 · Initial setup</span></div>
+    </aside>
+    <div className="md:ml-64"><header className="flex h-20 items-center justify-between border-b border-border bg-card px-5 lg:px-10"><div className="flex items-center gap-3"><button aria-label="Open navigation" aria-expanded={open} onClick={() => setOpen(true)} className="md:hidden"><Menu/></button><span className="text-sm text-muted-foreground">Workspace <span className="mx-3">/</span><span className="text-foreground">Overview</span></span></div><div className="flex items-center gap-5"><Bell size={18} className="text-muted-foreground" aria-label="Notifications placeholder"/><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">PA</span><div className="hidden text-xs sm:block"><p className="font-semibold">Platform Admin</p><p className="mt-1 text-muted-foreground">Demo profile</p></div><ChevronDown size={14}/></div><button disabled title="Logout becomes available with authentication" aria-label="Logout placeholder" className="text-muted-foreground opacity-50"><LogOut size={17}/></button></div></header><main className="mx-auto max-w-7xl p-5 lg:p-10"><Outlet/></main></div>
+  </div>;
+}

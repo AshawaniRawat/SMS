@@ -1,0 +1,9 @@
+node_modules/
+**/node_modules/
+
+# Local environment and generated output
+.env
+**/.env
+**/bin/
+**/obj/
+**/dist/
