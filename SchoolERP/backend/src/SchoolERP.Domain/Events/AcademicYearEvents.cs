@@ -1,0 +1,8 @@
+namespace SchoolERP.Domain.Events;
+public sealed record AcademicYearCreatedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearActivatedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearClosedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearArchivedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearMarkedCurrentDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearAdmissionsOpenedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearAdmissionsClosedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);

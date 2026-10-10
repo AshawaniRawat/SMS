@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SchoolERP.Application.Features.Tenants;
 using SchoolERP.Application.Features.Schools;
 using SchoolERP.Application.Features.Campuses;
+using SchoolERP.Application.Features.AcademicYears;
 namespace SchoolERP.Application.Common;
 public static class DependencyInjection
 {
@@ -12,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<ISchoolService, SchoolService>();
         services.AddScoped<ICampusService, CampusService>();
+        services.AddScoped<IAcademicYearService, AcademicYearService>();
         return services;
     }
 }

@@ -8,4 +8,5 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<Tenant> Tenants { get; }
     DbSet<School> Schools { get; }
     DbSet<Campus> Campuses { get; }
+    DbSet<AcademicYear> AcademicYears { get; }
 }

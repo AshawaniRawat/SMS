@@ -46,6 +46,7 @@ public sealed partial class School : AuditableEntity, ITenantEntity, ISoftDeleta
     public long Version { get; set; }
     public Tenant Tenant { get; private set; } = null!;
     public ICollection<Campus> Campuses { get; } = new List<Campus>();
+    public ICollection<AcademicYear> AcademicYears { get; } = new List<AcademicYear>();
 
     Guid ITenantEntity.TenantId
     {

@@ -31,6 +31,7 @@ public sealed partial class Tenant : AuditableEntity, IAggregateRoot
     public DateTime? ArchivedAt { get; private set; }
     public ICollection<School> Schools { get; } = new List<School>();
     public ICollection<Campus> Campuses { get; } = new List<Campus>();
+    public ICollection<AcademicYear> AcademicYears { get; } = new List<AcademicYear>();
 
     public static Tenant Create(
         string name,

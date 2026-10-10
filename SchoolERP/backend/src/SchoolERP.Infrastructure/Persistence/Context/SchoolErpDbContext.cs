@@ -14,6 +14,7 @@ public sealed class SchoolErpDbContext(
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<School> Schools => Set<School>();
     public DbSet<Campus> Campuses => Set<Campus>();
+    public DbSet<AcademicYear> AcademicYears => Set<AcademicYear>();
 
     // Properties on the context make the cached EF model use each context's tenant values.
     public Guid? CurrentTenantId => currentTenant.IsAvailable ? currentTenant.TenantId : null;
@@ -66,6 +67,8 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsSchoolCodeConflict(exception)) { throw new SchoolCodeConflictException(); }
         catch (DbUpdateException exception) when (IsCampusCodeConflict(exception)) { throw new CampusCodeConflictException(); }
         catch (DbUpdateException exception) when (IsMainCampusConflict(exception)) { throw new MainCampusConflictException(); }
+        catch (DbUpdateException exception) when (IsAcademicYearCodeConflict(exception)) { throw new AcademicYearCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -81,6 +84,8 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsSchoolCodeConflict(exception)) { throw new SchoolCodeConflictException(); }
         catch (DbUpdateException exception) when (IsCampusCodeConflict(exception)) { throw new CampusCodeConflictException(); }
         catch (DbUpdateException exception) when (IsMainCampusConflict(exception)) { throw new MainCampusConflictException(); }
+        catch (DbUpdateException exception) when (IsAcademicYearCodeConflict(exception)) { throw new AcademicYearCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
     }
 
     private static bool IsTenantSlugConflict(DbUpdateException exception) =>
@@ -101,4 +106,8 @@ public sealed class SchoolErpDbContext(
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_campuses_school_id_code" };
     private static bool IsMainCampusConflict(DbUpdateException exception) => exception.InnerException is PostgresException
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_campuses_school_id_main" };
+    private static bool IsAcademicYearCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_academic_years_school_id_code" };
+    private static bool IsCurrentAcademicYearConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_academic_years_school_id_current" };
 }
