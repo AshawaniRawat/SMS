@@ -64,7 +64,7 @@ public sealed class EntityFoundationTests
     {
         Assert.False((object)Tenant.Create("Test", "test") is ITenantEntity);
         Assert.IsAssignableFrom<ITenantEntity>(School.Create(Guid.NewGuid(), "Test", "TEST"));
-        Assert.IsAssignableFrom<ITenantEntity>(new Campus());
+        Assert.IsAssignableFrom<ITenantEntity>(Campus.Create(Guid.NewGuid(), Guid.NewGuid(), "Test", "TEST"));
         Assert.False((object)Tenant.Create("Test", "test-two") is ISoftDeletableEntity);
     }
 
@@ -84,7 +84,7 @@ public sealed class EntityFoundationTests
     public void CodesAreTrimmedAndUppercase()
     {
         Assert.Equal("MAIN", School.Create(Guid.NewGuid(), "Test", " main ").Code);
-        Assert.Equal("NORTH", new Campus { Code = " north " }.Code);
+        Assert.Equal("NORTH", Campus.Create(Guid.NewGuid(), Guid.NewGuid(), "Test", " north ").Code);
     }
 
     private static void SetRequiredProperty(string entityName, string property)
@@ -100,8 +100,8 @@ public sealed class EntityFoundationTests
         }
         else
         {
-            var entity = new Campus();
-            if (property == "name") entity.Name = "   "; else entity.Code = "   ";
+            if (property == "name") Campus.Create(Guid.NewGuid(), Guid.NewGuid(), "   ", "VALID");
+            else Campus.Create(Guid.NewGuid(), Guid.NewGuid(), "Valid", "   ");
         }
     }
 

@@ -20,7 +20,7 @@ public sealed class PersistenceTests(PostgresFixture database)
 {
     private static Tenant NewTenant() => Tenant.Create("Integration Test Tenant", "test-" + Guid.NewGuid().ToString("N"));
     private static School NewSchool(Tenant tenant, string code = "MAIN") => School.Create(tenant, "Test School", code);
-    private static Campus NewCampus(School school, string code = "MAIN") => new() { School = school, SchoolId = school.Id, TenantId = school.TenantId, Name = "Test Campus", Code = code };
+    private static Campus NewCampus(School school, string code = "MAIN") => Campus.Create(school, "Test Campus", code);
 
     [PostgresFact] public async Task CanConnectAndInitialMigrationCreatesFoundationTables()
     {
@@ -66,7 +66,7 @@ public sealed class PersistenceTests(PostgresFixture database)
     {
         await using var context = database.CreateContext(platformAccess: true);
         var tenant = NewTenant(); context.Schools.Add(NewSchool(tenant)); await context.SaveChangesAsync();
-        context.Schools.Add(NewSchool(tenant)); await AssertPostgresFailure(context, PostgresErrorCodes.UniqueViolation);
+        context.Schools.Add(NewSchool(tenant)); await Assert.ThrowsAsync<SchoolCodeConflictException>(() => context.SaveChangesAsync());
     }
 
     [PostgresFact] public async Task SameSchoolCodeAcrossTenantsIsAllowed()
@@ -81,7 +81,7 @@ public sealed class PersistenceTests(PostgresFixture database)
     {
         await using var context = database.CreateContext(platformAccess: true);
         var school = NewSchool(NewTenant()); context.Campuses.Add(NewCampus(school)); await context.SaveChangesAsync();
-        context.Campuses.Add(NewCampus(school)); await AssertPostgresFailure(context, PostgresErrorCodes.UniqueViolation);
+        context.Campuses.Add(NewCampus(school)); await Assert.ThrowsAsync<CampusCodeConflictException>(() => context.SaveChangesAsync());
     }
 
     [PostgresFact] public async Task SameCampusCodeAcrossSchoolsIsAllowed()
@@ -97,7 +97,7 @@ public sealed class PersistenceTests(PostgresFixture database)
         var school = NewSchool(NewTenant()); var otherTenant = NewTenant();
         context.Schools.Add(school); context.Tenants.Add(otherTenant); await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        context.Campuses.Add(new Campus { TenantId = otherTenant.Id, SchoolId = school.Id, Name = "Invalid", Code = "MAIN" });
+        context.Campuses.Add(Campus.Create(otherTenant.Id, school.Id, "Invalid", "MAIN"));
         await AssertPostgresFailure(context, PostgresErrorCodes.ForeignKeyViolation);
     }
 

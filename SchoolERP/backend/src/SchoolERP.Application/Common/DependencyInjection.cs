@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SchoolERP.Application.Features.Tenants;
 using SchoolERP.Application.Features.Schools;
+using SchoolERP.Application.Features.Campuses;
 namespace SchoolERP.Application.Common;
 public static class DependencyInjection
 {
@@ -10,6 +11,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<ISchoolService, SchoolService>();
+        services.AddScoped<ICampusService, CampusService>();
         return services;
     }
 }

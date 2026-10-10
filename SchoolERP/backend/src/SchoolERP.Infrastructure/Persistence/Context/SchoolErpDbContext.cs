@@ -64,6 +64,8 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateConcurrencyException exception) { throw new ConcurrencyConflictException(exception); }
         catch (DbUpdateException exception) when (IsTenantSlugConflict(exception)) { throw new TenantSlugConflictException(); }
         catch (DbUpdateException exception) when (IsSchoolCodeConflict(exception)) { throw new SchoolCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsCampusCodeConflict(exception)) { throw new CampusCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsMainCampusConflict(exception)) { throw new MainCampusConflictException(); }
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -77,6 +79,8 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateConcurrencyException exception) { throw new ConcurrencyConflictException(exception); }
         catch (DbUpdateException exception) when (IsTenantSlugConflict(exception)) { throw new TenantSlugConflictException(); }
         catch (DbUpdateException exception) when (IsSchoolCodeConflict(exception)) { throw new SchoolCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsCampusCodeConflict(exception)) { throw new CampusCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsMainCampusConflict(exception)) { throw new MainCampusConflictException(); }
     }
 
     private static bool IsTenantSlugConflict(DbUpdateException exception) =>
@@ -92,4 +96,9 @@ public sealed class SchoolErpDbContext(
             SqlState: PostgresErrorCodes.UniqueViolation,
             ConstraintName: "ux_schools_tenant_id_code"
         };
+
+    private static bool IsCampusCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_campuses_school_id_code" };
+    private static bool IsMainCampusConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_campuses_school_id_main" };
 }
