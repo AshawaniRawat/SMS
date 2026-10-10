@@ -148,3 +148,15 @@ Nullable reference types, implicit usings and warnings-as-errors are enabled. Us
 ## Future modules
 
 Authentication, academic years, users, roles and permissions retain placeholder folders. Tenant, School and Campus are persistence foundations only, with no CRUD APIs or workflows. Students, fees, attendance, exams, HR, payroll, LMS and transport are later phases. P1-03 and later functionality are not implemented.
+# SchoolERP
+
+## Development JWT setup
+
+The API requires an external JWT signing key. From `backend`, create a random development secret and store it with .NET user-secrets:
+
+```powershell
+$key = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
+dotnet user-secrets set "Jwt:SigningKey" $key --project src/SchoolERP.Api
+```
+
+`Jwt:Issuer` defaults to `SchoolERP.Api` and `Jwt:Audience` to `SchoolERP.Client`. Production must use `Jwt__SigningKey` or a managed secret store and HTTPS; never commit a real key.

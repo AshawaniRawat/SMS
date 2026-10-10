@@ -2,10 +2,9 @@ using SchoolERP.Application.Abstractions;
 
 namespace SchoolERP.Infrastructure.Tenancy;
 
-public sealed class CurrentTenant : ICurrentTenant
+public sealed class CurrentTenant(ICurrentUser currentUser) : ICurrentTenant
 {
-    // TODO: Resolve only from validated identity and tenant membership in a later phase.
-    public Guid? TenantId => null;
+    public Guid? TenantId => currentUser.IsAuthenticated ? currentUser.TenantId : null;
     public bool IsAvailable => TenantId.HasValue;
 }
 

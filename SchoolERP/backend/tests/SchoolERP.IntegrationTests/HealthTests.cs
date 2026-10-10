@@ -31,7 +31,12 @@ public sealed class ApiFactory(string? connectionString = null, string environme
         {
             ["ConnectionStrings:DefaultConnection"] = connectionString ?? "Host=localhost;Database=unused;Username=unused",
             ["Database:ApplyMigrationsOnStartup"] = initializeDatabase.ToString(),
-            ["Database:SeedDevelopmentData"] = initializeDatabase.ToString()
+            ["Database:SeedDevelopmentData"] = initializeDatabase.ToString(),
+            ["Jwt:Issuer"] = "SchoolERP.Tests",
+            ["Jwt:Audience"] = "SchoolERP.Tests.Client",
+            ["Jwt:SigningKey"] = "test-only-signing-key-that-is-at-least-32-bytes-long",
+            ["Jwt:AccessTokenLifetimeMinutes"] = "15",
+            ["Jwt:ClockSkewSeconds"] = "0"
         }));
     }
 }

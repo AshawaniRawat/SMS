@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using SchoolERP.Application.Features.Authentication;
 using SchoolERP.Infrastructure.Identity;
 using SchoolERP.Infrastructure.Persistence.Context;
+using SchoolERP.Application.Security;
 using Xunit;
 
 namespace SchoolERP.IntegrationTests;
@@ -13,7 +14,7 @@ namespace SchoolERP.IntegrationTests;
 public sealed class AuthenticationTests(PostgresFixture fixture)
 {
     [PostgresFact]
-    public async Task Valid_platform_login_updates_last_login_and_returns_no_tokens()
+    public async Task Valid_platform_login_updates_last_login_and_returns_access_token_only()
     {
         await using var context = fixture.CreateContext(platformAccess: true);
         using var manager = CreateManager(context);
@@ -22,8 +23,9 @@ public sealed class AuthenticationTests(PostgresFixture fixture)
         var result = await CreateService(manager, context).AuthenticateAsync(new(user.Email!, "Valid#Pass1"));
         Assert.True(result.IsSuccess, result.Error); Assert.False(result.Value!.RequiresTwoFactor);
         Assert.NotNull(result.Value.User.LastLoginAt); Assert.Null(result.Value.User.TenantId);
+        Assert.False(string.IsNullOrWhiteSpace(result.Value.AccessToken)); Assert.Equal("Bearer", result.Value.TokenType);
         var serialized = System.Text.Json.JsonSerializer.Serialize(result.Value);
-        Assert.DoesNotContain("token", serialized, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("refreshToken", serialized, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("password", serialized, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -68,11 +70,17 @@ public sealed class AuthenticationTests(PostgresFixture fixture)
         Assert.True((await manager.SetTwoFactorEnabledAsync(user, true)).Succeeded);
         var result = await CreateService(manager, context).AuthenticateAsync(new(user.Email!, "Valid#Pass1"));
         Assert.True(result.IsSuccess); Assert.True(result.Value!.RequiresTwoFactor); Assert.Null(result.Value.User.LastLoginAt);
+        Assert.Null(result.Value.AccessToken);
     }
 
     private static AuthenticationService CreateService(UserManager<ApplicationUser> manager, SchoolErpDbContext context,
         bool requireConfirmedEmail = false) => new(manager, context, new LoginRequestValidator(),
         Options.Create(new IdentitySettings { RequireConfirmedEmail = requireConfirmedEmail }), TimeProvider.System,
+        new JwtAccessTokenService(Options.Create(new JwtOptions
+        {
+            Issuer = "SchoolERP.Tests", Audience = "SchoolERP.Tests.Client",
+            SigningKey = "test-only-signing-key-that-is-at-least-32-bytes-long"
+        }), TimeProvider.System),
         NullLogger<AuthenticationService>.Instance);
 
     private static UserManager<ApplicationUser> CreateManager(SchoolErpDbContext context)

@@ -8,7 +8,8 @@ public sealed record AuthenticatedUserDto(Guid UserId, string FirstName, string 
     string? DisplayName, Guid? TenantId, Guid? SchoolId, Guid? CampusId, UserAccountStatus Status,
     bool EmailConfirmed, bool TwoFactorEnabled, DateTime? LastLoginAt);
 
-public sealed record LoginResponse(bool RequiresTwoFactor, AuthenticatedUserDto User);
+public sealed record LoginResponse(bool RequiresTwoFactor, string? AccessToken, DateTime? AccessTokenExpiresAtUtc,
+    string? TokenType, AuthenticatedUserDto User);
 
 public static class AuthenticationErrorCodes
 {

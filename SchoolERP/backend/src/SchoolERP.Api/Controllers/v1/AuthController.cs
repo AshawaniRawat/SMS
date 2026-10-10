@@ -2,15 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using SchoolERP.Application.Features.Authentication;
 using SchoolERP.Shared.Models;
+using Microsoft.AspNetCore.Authorization;
+using SchoolERP.Application.Abstractions;
+using SchoolERP.Application.Security;
 
 namespace SchoolERP.Api.Controllers.v1;
 
 [ApiController]
 [Route("api/v1/auth")]
-public sealed class AuthController(IAuthenticationService authenticationService) : ControllerBase
+public sealed class AuthController(IAuthenticationService authenticationService, ICurrentUser currentUser) : ControllerBase
 {
     /// <summary>Validates email, password, lockout, account, and organization eligibility. No token is issued in P1-11.</summary>
     [HttpPost("login")]
+    [AllowAnonymous]
     [EnableRateLimiting("login")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status400BadRequest)]
@@ -30,4 +34,9 @@ public sealed class AuthController(IAuthenticationService authenticationService)
             _ => StatusCode(StatusCodes.Status403Forbidden, body)
         };
     }
+
+    [HttpGet("me")]
+    [Authorize]
+    public ActionResult<ApiResponse<CurrentUserDto>> Me() => Ok(ApiResponse<CurrentUserDto>.Ok(
+        new(currentUser.UserId, currentUser.Email, currentUser.TenantId, currentUser.SchoolId, currentUser.CampusId, currentUser.Roles)));
 }

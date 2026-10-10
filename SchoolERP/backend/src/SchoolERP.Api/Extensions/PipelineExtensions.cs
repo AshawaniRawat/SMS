@@ -11,6 +11,8 @@ public static class PipelineExtensions
         else { app.UseHsts(); app.UseHttpsRedirection(); }
         app.UseCors("Frontend");
         app.UseRateLimiter();
+        app.UseAuthentication();
+        app.UseAuthorization();
         app.MapControllers();
         app.MapHealthChecks("/api/health", new HealthCheckOptions
         {

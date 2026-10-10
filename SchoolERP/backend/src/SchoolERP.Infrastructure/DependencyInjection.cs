@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Identity;
 using SchoolERP.Application.Features.Identity;
 using SchoolERP.Infrastructure.Identity;
 using SchoolERP.Application.Features.Authentication;
+using SchoolERP.Application.Security;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -22,6 +23,8 @@ public static class DependencyInjection
     {
         services.AddOptions<DatabaseOptions>().Bind(configuration.GetSection(DatabaseOptions.SectionName))
             .ValidateDataAnnotations().ValidateOnStart();
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUser, HttpCurrentUser>();
         services.AddScoped<ICurrentTenant, CurrentTenant>();
         services.AddScoped<IPlatformDataAccess, RestrictedPlatformDataAccess>();
         services.AddScoped<AuditableEntityInterceptor>();
@@ -70,6 +73,7 @@ public static class DependencyInjection
         }).AddRoles<ApplicationRole>().AddEntityFrameworkStores<SchoolErpDbContext>().AddDefaultTokenProviders();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddSingleton<IAccessTokenService, JwtAccessTokenService>();
         services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

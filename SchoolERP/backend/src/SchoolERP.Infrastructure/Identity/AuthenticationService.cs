@@ -7,12 +7,13 @@ using SchoolERP.Application.Features.Authentication;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Infrastructure.Persistence.Context;
 using SchoolERP.Shared.Results;
+using SchoolERP.Application.Security;
 
 namespace SchoolERP.Infrastructure.Identity;
 
 public sealed class AuthenticationService(UserManager<ApplicationUser> userManager, SchoolErpDbContext context,
     IValidator<LoginRequest> validator, IOptions<IdentitySettings> settings, TimeProvider timeProvider,
-    ILogger<AuthenticationService> logger) : IAuthenticationService
+    IAccessTokenService accessTokenService, ILogger<AuthenticationService> logger) : IAuthenticationService
 {
     public async Task<Result<LoginResponse>> AuthenticateAsync(LoginRequest request, CancellationToken ct = default)
     {
@@ -74,7 +75,7 @@ public sealed class AuthenticationService(UserManager<ApplicationUser> userManag
         if (user.TwoFactorEnabled)
         {
             logger.LogInformation("LoginRequiresTwoFactor for UserId {UserId}, TenantId {TenantId}", user.Id, user.TenantId);
-            return Result<LoginResponse>.Ok(new(true, Map(user)));
+            return Result<LoginResponse>.Ok(new(true, null, null, null, Map(user)));
         }
 
         user.RecordSuccessfulLogin(timeProvider.GetUtcNow().UtcDateTime);
@@ -86,7 +87,9 @@ public sealed class AuthenticationService(UserManager<ApplicationUser> userManag
             return Fail("Authentication could not be completed.", AuthenticationErrorCodes.PersistenceFailure);
         }
         logger.LogInformation("LoginSucceeded for UserId {UserId}, TenantId {TenantId}", user.Id, user.TenantId);
-        return Result<LoginResponse>.Ok(new(false, Map(user)));
+        var authenticatedUser = Map(user);
+        var token = accessTokenService.GenerateToken(authenticatedUser);
+        return Result<LoginResponse>.Ok(new(false, token.AccessToken, token.ExpiresAtUtc, token.TokenType, authenticatedUser));
     }
 
     private static Result<LoginResponse>? ValidateAccount(ApplicationUser user)
