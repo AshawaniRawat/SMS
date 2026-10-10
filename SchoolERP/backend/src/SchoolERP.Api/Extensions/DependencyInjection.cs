@@ -40,6 +40,15 @@ public static class DependencyInjection
                     QueueLimit = 0,
                     AutoReplenishment = true
                 }));
+            options.AddPolicy("refresh", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 30,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                }));
         });
         services.AddExceptionHandler<PersistenceExceptionHandler>();
         services.AddExceptionHandler<DatabaseExceptionHandler>();
@@ -53,6 +62,12 @@ public static class DependencyInjection
             .Validate(x => !x.SigningKey.Contains("SET_USING_", StringComparison.OrdinalIgnoreCase), "Jwt:SigningKey cannot be a placeholder.")
             .Validate(x => x.AccessTokenLifetimeMinutes is >= 5 and <= 60, "JWT access-token lifetime must be between 5 and 60 minutes.")
             .Validate(x => x.ClockSkewSeconds is >= 0 and <= 300, "JWT clock skew must be between 0 and 300 seconds.")
+            .ValidateOnStart();
+        services.AddOptions<RefreshTokenOptions>().Bind(configuration.GetSection(RefreshTokenOptions.SectionName))
+            .Validate(x => x.RefreshTokenLifetimeDays is >= 1 and <= 30,
+                "Refresh-token lifetime must be between 1 and 30 days.")
+            .Validate(x => x.RefreshTokenRetentionDays is >= 0 and <= 365,
+                "Refresh-token retention must be between 0 and 365 days.")
             .ValidateOnStart();
         services.AddAuthentication(options =>
         {

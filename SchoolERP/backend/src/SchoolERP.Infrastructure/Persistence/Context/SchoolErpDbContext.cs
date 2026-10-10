@@ -17,6 +17,7 @@ public sealed class SchoolErpDbContext(
     public DbSet<School> Schools => Set<School>();
     public DbSet<Campus> Campuses => Set<Campus>();
     public DbSet<AcademicYear> AcademicYears => Set<AcademicYear>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // Properties on the context make the cached EF model use each context's tenant values.
     public Guid? CurrentTenantId => currentTenant.IsAvailable ? currentTenant.TenantId : null;

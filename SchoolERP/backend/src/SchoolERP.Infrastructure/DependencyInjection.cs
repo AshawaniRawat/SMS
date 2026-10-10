@@ -25,6 +25,7 @@ public static class DependencyInjection
             .ValidateDataAnnotations().ValidateOnStart();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
+        services.AddScoped<IClientRequestContext, HttpClientRequestContext>();
         services.AddScoped<ICurrentTenant, CurrentTenant>();
         services.AddScoped<IPlatformDataAccess, RestrictedPlatformDataAccess>();
         services.AddScoped<AuditableEntityInterceptor>();
@@ -74,6 +75,8 @@ public static class DependencyInjection
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddSingleton<IAccessTokenService, JwtAccessTokenService>();
+        services.AddSingleton<IRefreshTokenHasher, RefreshTokenHasher>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

@@ -9,7 +9,7 @@ public sealed record AuthenticatedUserDto(Guid UserId, string FirstName, string 
     bool EmailConfirmed, bool TwoFactorEnabled, DateTime? LastLoginAt);
 
 public sealed record LoginResponse(bool RequiresTwoFactor, string? AccessToken, DateTime? AccessTokenExpiresAtUtc,
-    string? TokenType, AuthenticatedUserDto User);
+    string? RefreshToken, DateTime? RefreshTokenExpiresAtUtc, string? TokenType, AuthenticatedUserDto User);
 
 public static class AuthenticationErrorCodes
 {

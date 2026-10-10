@@ -27,4 +27,4 @@ Bearer validation requires the configured issuer, audience, signature, and lifet
 
 Successful `POST /api/v1/auth/login` responses contain `accessToken`, `accessTokenExpiresAtUtc`, `tokenType: Bearer`, and the safe user summary. A 2FA-required response contains no token. `GET /api/v1/auth/me` requires bearer authentication and returns only safe current-user claims.
 
-Swagger exposes a Bearer input for development; it never embeds a token or signing key. Browser clients should keep short-lived access tokens in memory when practical. P1-13 will decide refresh-token persistence and secure long-session behavior.
+Swagger exposes a Bearer input for development; it never embeds a token or signing key. Browser clients should keep short-lived access tokens in memory when practical. Rotating refresh-token persistence and long-session behavior are documented in [refresh-tokens.md](refresh-tokens.md).

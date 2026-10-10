@@ -13,7 +13,8 @@ namespace SchoolERP.Infrastructure.Identity;
 
 public sealed class AuthenticationService(UserManager<ApplicationUser> userManager, SchoolErpDbContext context,
     IValidator<LoginRequest> validator, IOptions<IdentitySettings> settings, TimeProvider timeProvider,
-    IAccessTokenService accessTokenService, ILogger<AuthenticationService> logger) : IAuthenticationService
+    IAccessTokenService accessTokenService, IRefreshTokenService refreshTokenService,
+    ILogger<AuthenticationService> logger) : IAuthenticationService
 {
     public async Task<Result<LoginResponse>> AuthenticateAsync(LoginRequest request, CancellationToken ct = default)
     {
@@ -75,21 +76,39 @@ public sealed class AuthenticationService(UserManager<ApplicationUser> userManag
         if (user.TwoFactorEnabled)
         {
             logger.LogInformation("LoginRequiresTwoFactor for UserId {UserId}, TenantId {TenantId}", user.Id, user.TenantId);
-            return Result<LoginResponse>.Ok(new(true, null, null, null, Map(user)));
+            return Result<LoginResponse>.Ok(new(true, null, null, null, null, null, Map(user)));
         }
 
-        user.RecordSuccessfulLogin(timeProvider.GetUtcNow().UtcDateTime);
-        var update = await userManager.UpdateAsync(user);
-        if (!update.Succeeded)
+        try
         {
-            logger.LogError("Identity failed to record successful login for UserId {UserId}: {Codes}", user.Id,
-                string.Join(",", update.Errors.Select(x => x.Code)));
+            var strategy = context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await context.Database.BeginTransactionAsync(ct);
+                user.RecordSuccessfulLogin(timeProvider.GetUtcNow().UtcDateTime);
+                var update = await userManager.UpdateAsync(user);
+                if (!update.Succeeded)
+                {
+                    logger.LogError("Identity failed to record successful login for UserId {UserId}: {Codes}", user.Id,
+                        string.Join(",", update.Errors.Select(x => x.Code)));
+                    await transaction.RollbackAsync(ct);
+                    return Fail("Authentication could not be completed.", AuthenticationErrorCodes.PersistenceFailure);
+                }
+                var authenticatedUser = Map(user);
+                var refresh = await refreshTokenService.CreateAsync(authenticatedUser, user.SecurityStamp ?? string.Empty, ct);
+                await transaction.CommitAsync(ct);
+                var access = accessTokenService.GenerateToken(authenticatedUser);
+                logger.LogInformation("LoginSucceeded for UserId {UserId}, TenantId {TenantId}, SessionId {SessionId}",
+                    user.Id, user.TenantId, refresh.SessionId);
+                return Result<LoginResponse>.Ok(new(false, access.AccessToken, access.ExpiresAtUtc,
+                    refresh.RefreshToken, refresh.RefreshTokenExpiresAtUtc, access.TokenType, authenticatedUser));
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to persist login session for UserId {UserId}", user.Id);
             return Fail("Authentication could not be completed.", AuthenticationErrorCodes.PersistenceFailure);
         }
-        logger.LogInformation("LoginSucceeded for UserId {UserId}, TenantId {TenantId}", user.Id, user.TenantId);
-        var authenticatedUser = Map(user);
-        var token = accessTokenService.GenerateToken(authenticatedUser);
-        return Result<LoginResponse>.Ok(new(false, token.AccessToken, token.ExpiresAtUtc, token.TokenType, authenticatedUser));
     }
 
     private static Result<LoginResponse>? ValidateAccount(ApplicationUser user)

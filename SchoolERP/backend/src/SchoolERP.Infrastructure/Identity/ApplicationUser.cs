@@ -28,6 +28,7 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IAuditableEntity
     public Tenant? Tenant { get; private set; }
     public School? School { get; private set; }
     public Campus? Campus { get; private set; }
+    public ICollection<RefreshToken> RefreshTokens { get; } = new List<RefreshToken>();
 
     public static ApplicationUser Create(string firstName, string lastName, string email,
         Guid? tenantId = null, Guid? schoolId = null, Guid? campusId = null, bool activate = false,
