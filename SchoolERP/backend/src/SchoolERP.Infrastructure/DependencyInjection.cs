@@ -77,6 +77,7 @@ public static class DependencyInjection
         services.AddSingleton<IAccessTokenService, JwtAccessTokenService>();
         services.AddSingleton<IRefreshTokenHasher, RefreshTokenHasher>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<ISessionService, UserSessionService>();
         services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

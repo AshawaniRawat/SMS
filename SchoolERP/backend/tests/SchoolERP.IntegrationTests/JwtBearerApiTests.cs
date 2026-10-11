@@ -34,7 +34,8 @@ public sealed class JwtBearerApiTests(PostgresFixture database)
         var data = document.RootElement.GetProperty("data");
         var token = data.GetProperty("accessToken").GetString();
         Assert.Equal("Bearer", data.GetProperty("tokenType").GetString());
-        Assert.False(data.TryGetProperty("refreshToken", out _));
+        Assert.True(data.TryGetProperty("refreshToken", out var refreshToken));
+        Assert.False(string.IsNullOrWhiteSpace(refreshToken.GetString()));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var me = await client.GetAsync("/api/v1/auth/me");
         Assert.Equal(HttpStatusCode.OK, me.StatusCode);

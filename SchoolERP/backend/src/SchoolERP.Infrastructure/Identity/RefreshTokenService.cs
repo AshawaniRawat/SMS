@@ -46,7 +46,15 @@ public sealed class RefreshTokenService(
         var strategy = context.Database.CreateExecutionStrategy();
         return await strategy.ExecuteAsync(async () =>
         {
+            var identity = await context.RefreshTokens.AsNoTracking()
+                .Where(x => x.TokenHash == hash)
+                .Select(x => new { x.UserId })
+                .SingleOrDefaultAsync(cancellationToken);
+            if (identity is null)
+                return Fail("The refresh token is invalid.", RefreshTokenErrorCodes.Invalid);
+
             await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+            await SessionConcurrencyLock.AcquireAsync(context, identity.UserId, cancellationToken);
             var current = await context.RefreshTokens
                 .FromSqlInterpolated($"SELECT * FROM refresh_tokens WHERE token_hash = {hash} FOR UPDATE")
                 .SingleOrDefaultAsync(cancellationToken);

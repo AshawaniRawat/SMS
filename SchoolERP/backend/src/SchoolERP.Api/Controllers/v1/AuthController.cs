@@ -5,13 +5,14 @@ using SchoolERP.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using SchoolERP.Application.Abstractions;
 using SchoolERP.Application.Security;
+using SchoolERP.Application.Common.Pagination;
 
 namespace SchoolERP.Api.Controllers.v1;
 
 [ApiController]
 [Route("api/v1/auth")]
 public sealed class AuthController(IAuthenticationService authenticationService, IRefreshTokenService refreshTokenService,
-    ICurrentUser currentUser) : ControllerBase
+    ISessionService sessionService, ICurrentUser currentUser) : ControllerBase
 {
     /// <summary>Validates email, password, lockout, account, and organization eligibility. No token is issued in P1-11.</summary>
     [HttpPost("login")]
@@ -56,6 +57,54 @@ public sealed class AuthController(IAuthenticationService authenticationService,
             RefreshTokenErrorCodes.PersistenceFailure => StatusCode(StatusCodes.Status500InternalServerError, body),
             _ => Unauthorized(body)
         };
+    }
+
+    /// <summary>Revokes the complete refresh-token chain identified by the supplied token. Safe to repeat.</summary>
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken cancellationToken)
+    {
+        var result = await sessionService.LogoutSessionAsync(request.RefreshToken, cancellationToken);
+        if (result.IsSuccess) return NoContent();
+        return BadRequest(ApiResponse<bool>.Fail([result.Error ?? "The logout request is invalid."], result.ErrorCode));
+    }
+
+    /// <summary>Revokes every refresh-token session owned by the authenticated user.</summary>
+    [HttpPost("logout-all")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> LogoutAll(CancellationToken cancellationToken)
+    {
+        await sessionService.LogoutAllAsync(currentUser.UserId!.Value, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Returns one safe, aggregated row per refresh-token session.</summary>
+    [HttpGet("sessions")]
+    [Authorize]
+    [ProducesResponseType(typeof(ApiResponse<PagedResult<UserSessionDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<PagedResult<UserSessionDto>>>> Sessions(
+        [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] bool activeOnly = true,
+        CancellationToken cancellationToken = default)
+    {
+        if (pageNumber < 1 || pageSize is < 1 or > 100)
+            return BadRequest(ApiResponse<PagedResult<UserSessionDto>>.Fail(["Page number must be positive and page size must be between 1 and 100."]));
+        var result = await sessionService.GetSessionsAsync(currentUser.UserId!.Value,
+            new PagedRequest(pageNumber, pageSize), activeOnly, cancellationToken);
+        return Ok(ApiResponse<PagedResult<UserSessionDto>>.Ok(result));
+    }
+
+    /// <summary>Revokes an owned refresh-token session. Already-revoked sessions remain idempotent.</summary>
+    [HttpPost("sessions/{sessionId}/revoke")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RevokeSession(string sessionId, CancellationToken cancellationToken)
+    {
+        var result = await sessionService.RevokeSessionByIdAsync(currentUser.UserId!.Value, sessionId, cancellationToken);
+        return result.IsSuccess ? NoContent() : NotFound();
     }
 
     [HttpGet("me")]
