@@ -7,19 +7,20 @@ using SchoolERP.Application.Common.Pagination;
 using SchoolERP.Application.Exceptions;
 using SchoolERP.Domain.Entities;
 using SchoolERP.Domain.Enums;
+using SchoolERP.Application.Security;
 
 namespace SchoolERP.Application.Features.Campuses;
 
 public sealed class CampusService(IApplicationDbContext context, ICurrentTenant currentTenant,
     IValidator<CreateCampusRequest> createValidator, IValidator<CampusProfileRequest> profileValidator,
-    IValidator<ChangeCampusCodeRequest> codeValidator, TimeProvider timeProvider) : ICampusService
+    IValidator<ChangeCampusCodeRequest> codeValidator, IResourceScopeValidator scope, TimeProvider timeProvider) : ICampusService
 {
     public async Task<CampusDto> CreateAsync(CreateCampusRequest request, CancellationToken ct = default)
     {
         await createValidator.ValidateAndThrowAsync(request, ct); var tenantId = RequireTenant();
         await EnsureTenantOperational(tenantId, ct);
         var school = await context.Schools.SingleOrDefaultAsync(x => x.Id == request.SchoolId, ct);
-        if (school is null) throw new TenantMismatchException();
+        if (school is null || !scope.CanAccessSchool(school.Id)) throw new ResourceNotFoundException("School");
         if (school.Status is SchoolStatus.Suspended or SchoolStatus.Archived)
             throw new ParentNotOperationalException("A campus cannot be created under a suspended or archived school.");
         var code = Campus.NormalizeCode(request.Code);
@@ -31,15 +32,19 @@ public sealed class CampusService(IApplicationDbContext context, ICurrentTenant 
         context.Campuses.Add(campus); await context.SaveChangesAsync(ct); return Map(campus);
     }
 
-    public async Task<CampusDto?> GetByIdAsync(Guid id, CancellationToken ct = default) { RequireTenant(); return await context.Campuses.AsNoTracking().Where(x => x.Id == id).Select(Project()).SingleOrDefaultAsync(ct); }
-    public async Task<CampusDto?> GetByCodeAsync(Guid schoolId, string code, CancellationToken ct = default) { RequireTenant(); var normalized = Campus.NormalizeCode(code); return await context.Campuses.AsNoTracking().Where(x => x.SchoolId == schoolId && x.Code == normalized).Select(Project()).SingleOrDefaultAsync(ct); }
+    public async Task<CampusDto?> GetByIdAsync(Guid id, CancellationToken ct = default) { RequireTenant(); return await ScopedCampuses().Where(x => x.Id == id).Select(Project()).SingleOrDefaultAsync(ct); }
+    public async Task<CampusDto?> GetForSchoolAsync(Guid schoolId, Guid campusId, CancellationToken ct = default) { RequireTenant(); if (!scope.CanAccessSchool(schoolId)) return null; return await ScopedCampuses().Where(x => x.Id == campusId && x.SchoolId == schoolId).Select(Project()).SingleOrDefaultAsync(ct); }
+    public async Task<CampusDto?> GetByCodeAsync(Guid schoolId, string code, CancellationToken ct = default) { RequireTenant(); if (!await IsVisibleSchool(schoolId, ct)) return null; var normalized = Campus.NormalizeCode(code); return await ScopedCampuses().Where(x => x.SchoolId == schoolId && x.Code == normalized).Select(Project()).SingleOrDefaultAsync(ct); }
     public Task<PagedResult<CampusDto>> ListAsync(PagedRequest page, Guid? schoolId, string? search, CampusStatus? status, bool? isMain, CancellationToken ct = default)
     {
-        RequireTenant(); var query = context.Campuses.AsNoTracking();
+        RequireTenant(); var query = ScopedCampuses();
         query = query.WhereIf(schoolId.HasValue, x => x.SchoolId == schoolId).WhereIf(status.HasValue, x => x.Status == status).WhereIf(isMain.HasValue, x => x.IsMainCampus == isMain);
         if (!string.IsNullOrWhiteSpace(search)) { var term = search.Trim().ToLowerInvariant(); query = query.Where(x => x.Name.ToLower().Contains(term) || x.Code.ToLower().Contains(term) || (x.ShortName != null && x.ShortName.ToLower().Contains(term)) || (x.City != null && x.City.ToLower().Contains(term))); }
         return query.OrderBy(x => x.Name).Select(Project()).ToPagedResultAsync(page, ct);
     }
+
+    public async Task<PagedResult<CampusDto>?> ListForSchoolAsync(PagedRequest page, Guid schoolId, string? search, CampusStatus? status, bool? isMain, CancellationToken ct = default)
+    { if (!await IsVisibleSchool(schoolId, ct)) return null; return await ListAsync(page, schoolId, search, status, isMain, ct); }
 
     public async Task<CampusDto?> UpdateAsync(Guid id, CampusProfileRequest request, CancellationToken ct = default)
     { await profileValidator.ValidateAndThrowAsync(request, ct); var campus = await FindForWrite(id, ct); if (campus is null) return null; Apply(campus, request); await context.SaveChangesAsync(ct); return Map(campus); }
@@ -48,12 +53,14 @@ public sealed class CampusService(IApplicationDbContext context, ICurrentTenant 
     public async Task<CampusDto?> SetMainAsync(Guid id, CancellationToken ct = default)
     {
         var tenantId = RequireTenant(); await EnsureTenantOperational(tenantId, ct);
-        var targetInfo = await context.Campuses.AsNoTracking().Where(x => x.Id == id)
+        var targetInfo = await ScopedCampuses().Where(x => x.Id == id)
             .Select(x => new { x.Id, x.SchoolId }).SingleOrDefaultAsync(ct);
         if (targetInfo is null) return null;
         // Track the current main first so EF updates it before the replacement inside its SaveChanges transaction.
         var current = await context.Campuses.SingleOrDefaultAsync(x => x.SchoolId == targetInfo.SchoolId && x.IsMainCampus && x.Id != id, ct);
-        var target = await context.Campuses.SingleAsync(x => x.Id == id, ct);
+        var target = await context.Campuses.SingleAsync(x => x.Id == id &&
+            (!scope.SchoolId.HasValue || x.SchoolId == scope.SchoolId) &&
+            (!scope.CampusId.HasValue || x.Id == scope.CampusId), ct);
         current?.RemoveMainCampusDesignation(); target.MarkAsMainCampus(Now());
         await context.SaveChangesAsync(ct); return Map(target);
     }
@@ -65,7 +72,11 @@ public sealed class CampusService(IApplicationDbContext context, ICurrentTenant 
     private async Task<CampusDto?> ChangeStatus(Guid id, bool requiresActiveSchool, Action<Campus> action, CancellationToken ct)
     { var campus = await FindForWrite(id, ct); if (campus is null) return null; if (requiresActiveSchool) { var status = await context.Schools.AsNoTracking().Where(x => x.Id == campus.SchoolId).Select(x => x.Status).SingleAsync(ct); if (status != SchoolStatus.Active) throw new ParentNotOperationalException("Campus activation requires an active school."); } action(campus); await context.SaveChangesAsync(ct); return Map(campus); }
 
-    private async Task<Campus?> FindForWrite(Guid id, CancellationToken ct) { var tenantId = RequireTenant(); await EnsureTenantOperational(tenantId, ct); return await context.Campuses.SingleOrDefaultAsync(x => x.Id == id, ct); }
+    private async Task<Campus?> FindForWrite(Guid id, CancellationToken ct) { var tenantId = RequireTenant(); await EnsureTenantOperational(tenantId, ct); return await context.Campuses.SingleOrDefaultAsync(x => x.Id == id && (!scope.SchoolId.HasValue || x.SchoolId == scope.SchoolId) && (!scope.CampusId.HasValue || x.Id == scope.CampusId), ct); }
+    private IQueryable<Campus> ScopedCampuses() => context.Campuses.AsNoTracking().Where(x =>
+        (!scope.SchoolId.HasValue || x.SchoolId == scope.SchoolId) && (!scope.CampusId.HasValue || x.Id == scope.CampusId));
+    private async Task<bool> IsVisibleSchool(Guid schoolId, CancellationToken ct) => scope.CanAccessSchool(schoolId) &&
+        await context.Schools.AsNoTracking().AnyAsync(x => x.Id == schoolId, ct);
     private Guid RequireTenant() => currentTenant is { IsAvailable: true, TenantId: { } id } && id != Guid.Empty ? id : throw new TenantContextMissingException();
     private async Task EnsureTenantOperational(Guid id, CancellationToken ct) { var status = await context.Tenants.AsNoTracking().Where(x => x.Id == id).Select(x => (TenantStatus?)x.Status).SingleOrDefaultAsync(ct); if (status is null) throw new TenantMismatchException(); if (status is TenantStatus.Suspended or TenantStatus.Archived) throw new ParentNotOperationalException("Campus operations are blocked for a suspended or archived tenant."); }
     private static void Apply(Campus x, CampusProfileRequest r) => x.UpdateProfile(r.Name, r.ShortName, r.Email, r.Phone, r.AlternatePhone, r.AddressLine1, r.AddressLine2, r.City, r.State, r.PostalCode, r.CountryCode, r.TimeZoneId, r.Latitude, r.Longitude);

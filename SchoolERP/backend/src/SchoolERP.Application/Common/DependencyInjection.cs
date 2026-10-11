@@ -4,6 +4,7 @@ using SchoolERP.Application.Features.Tenants;
 using SchoolERP.Application.Features.Schools;
 using SchoolERP.Application.Features.Campuses;
 using SchoolERP.Application.Features.AcademicYears;
+using SchoolERP.Application.Security;
 namespace SchoolERP.Application.Common;
 public static class DependencyInjection
 {
@@ -14,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<ISchoolService, SchoolService>();
         services.AddScoped<ICampusService, CampusService>();
         services.AddScoped<IAcademicYearService, AcademicYearService>();
+        services.AddScoped<IResourceScopeValidator, ResourceScopeValidator>();
         return services;
     }
 }

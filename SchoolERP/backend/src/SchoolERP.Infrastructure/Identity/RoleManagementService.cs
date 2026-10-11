@@ -39,7 +39,7 @@ public sealed class RoleManagementService(
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
         { return Duplicate(); }
-        return Result<RoleDto>.Ok(await MapAsync(role, ct));
+        return Result<RoleDto>.Ok(await MapAsync(role, tenantId, ct));
     }
 
     public async Task<PagedResult<RoleDto>> ListTenantRolesAsync(Guid tenantId, PagedRequest page,
@@ -59,7 +59,7 @@ public sealed class RoleManagementService(
         var rows = await query.OrderBy(x => x.SortOrder).ThenBy(x => x.DisplayName)
             .Skip((page.PageNumber - 1) * page.PageSize).Take(page.PageSize).ToListAsync(ct);
         var result = new List<RoleDto>(rows.Count);
-        foreach (var role in rows) result.Add(await MapAsync(role, ct));
+        foreach (var role in rows) result.Add(await MapAsync(role, tenantId, ct));
         return new(result, page.PageNumber, page.PageSize, total);
     }
 
@@ -67,7 +67,7 @@ public sealed class RoleManagementService(
     {
         var role = await context.Roles.AsNoTracking().SingleOrDefaultAsync(x => x.Id == roleId &&
             (x.TenantId == tenantId || (x.TenantId == null && x.Type != RoleType.Platform)), ct);
-        return role is null ? null : await MapAsync(role, ct);
+        return role is null ? null : await MapAsync(role, tenantId, ct);
     }
 
     public async Task<Result<RoleDto>> UpdateTenantRoleAsync(Guid tenantId, Guid roleId, UpdateRoleRequest request,
@@ -90,7 +90,7 @@ public sealed class RoleManagementService(
         if (role.IsSystemRole) return Protected();
         if (await context.Set<IdentityUserRole<Guid>>().AnyAsync(x => x.RoleId == roleId, ct))
             return Fail("Users must be unassigned before archiving this role.", RoleErrorCodes.HasAssignedUsers);
-        return await MutateLoaded(role, x => x.Archive(), ct);
+        return await MutateLoaded(tenantId, role, x => x.Archive(), ct);
     }
 
     public async Task<Result<bool>> AssignRoleAsync(Guid tenantId, Guid userId, Guid roleId, CancellationToken ct = default)
@@ -117,15 +117,15 @@ public sealed class RoleManagementService(
         return result.Succeeded ? Result<bool>.Ok(true) : Result<bool>.Fail(SafeErrors(result), RoleErrorCodes.PersistenceFailure);
     }
 
-    public async Task<IReadOnlyCollection<RoleDto>> GetUserRolesAsync(Guid tenantId, Guid userId, CancellationToken ct = default)
+    public async Task<IReadOnlyCollection<RoleDto>?> GetUserRolesAsync(Guid tenantId, Guid userId, CancellationToken ct = default)
     {
         var user = await context.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == userId && x.TenantId == tenantId, ct);
-        if (user is null) return [];
+        if (user is null) return null;
         var roles = await (from role in context.Roles.AsNoTracking()
             join assignment in context.Set<IdentityUserRole<Guid>>() on role.Id equals assignment.RoleId
             where assignment.UserId == userId select role).ToListAsync(ct);
         var result = new List<RoleDto>();
-        foreach (var role in roles) result.Add(await MapAsync(role, ct));
+        foreach (var role in roles) result.Add(await MapAsync(role, tenantId, ct));
         return result;
     }
 
@@ -134,14 +134,14 @@ public sealed class RoleManagementService(
         var role = await TenantOperationRole(tenantId, roleId, ct);
         if (role is null) return NotFound();
         if (role.IsSystemRole) return Protected();
-        return await MutateLoaded(role, action, ct);
+        return await MutateLoaded(tenantId, role, action, ct);
     }
-    private async Task<Result<RoleDto>> MutateLoaded(ApplicationRole role, Action<ApplicationRole> action, CancellationToken ct)
+    private async Task<Result<RoleDto>> MutateLoaded(Guid tenantId, ApplicationRole role, Action<ApplicationRole> action, CancellationToken ct)
     {
         try { action(role); }
         catch (DomainException ex) { return Fail(ex.Message, RoleErrorCodes.Validation); }
         var updated = await roleManager.UpdateAsync(role);
-        return updated.Succeeded ? Result<RoleDto>.Ok(await MapAsync(role, ct)) :
+        return updated.Succeeded ? Result<RoleDto>.Ok(await MapAsync(role, tenantId, ct)) :
             Fail(SafeErrors(updated), RoleErrorCodes.PersistenceFailure);
     }
     private Task<ApplicationRole?> TenantOperationRole(Guid tenantId, Guid roleId, CancellationToken ct) =>
@@ -164,9 +164,12 @@ public sealed class RoleManagementService(
         RoleType.Campus => (user.TenantId == role.TenantId || role.IsSystemRole && user.TenantId.HasValue) && user.CampusId.HasValue,
         _ => false
     };
-    private async Task<RoleDto> MapAsync(ApplicationRole x, CancellationToken ct) => new(x.Id, x.TenantId, x.Code,
+    private async Task<RoleDto> MapAsync(ApplicationRole x, Guid tenantId, CancellationToken ct) => new(x.Id, x.TenantId, x.Code,
         x.DisplayName, x.Description, x.Type, x.IsSystemRole, x.IsActive, x.Status, x.SortOrder,
-        await context.Set<IdentityUserRole<Guid>>().CountAsync(y => y.RoleId == x.Id, ct), x.CreatedAt);
+        await (from assignment in context.Set<IdentityUserRole<Guid>>()
+            join user in context.Users on assignment.UserId equals user.Id
+            where assignment.RoleId == x.Id && user.TenantId == tenantId
+            select assignment).CountAsync(ct), x.CreatedAt);
     private static string SafeErrors(IdentityResult result) => string.Join(" ", result.Errors.Select(x => x.Description));
     private static Result<RoleDto> Fail(string message, string code) => Result<RoleDto>.Fail(message, code);
     private static Result<RoleDto> Duplicate() => Fail("A role with this code already exists.", RoleErrorCodes.DuplicateCode);

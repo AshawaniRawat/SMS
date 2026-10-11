@@ -25,7 +25,11 @@ public sealed class CampusesController(ICampusService service) : ApiControllerBa
     [RequirePermission(PermissionCatalog.Campus.View)]
     public async Task<ActionResult<ApiResponse<PagedResult<CampusDto>>>> BySchool(Guid schoolId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null, [FromQuery] CampusStatus? status = null, [FromQuery] bool? isMainCampus = null, CancellationToken ct = default) =>
-        Ok(ApiResponse<PagedResult<CampusDto>>.Ok(await service.ListAsync(new(pageNumber, pageSize), schoolId, search, status, isMainCampus, ct)));
+        Result(await service.ListForSchoolAsync(new(pageNumber, pageSize), schoolId, search, status, isMainCampus, ct));
+    [HttpGet("/api/v1/schools/{schoolId:guid}/campuses/{campusId:guid}")]
+    [RequirePermission(PermissionCatalog.Campus.View)]
+    public async Task<ActionResult<ApiResponse<CampusDto>>> ForSchool(Guid schoolId, Guid campusId, CancellationToken ct) =>
+        Result(await service.GetForSchoolAsync(schoolId, campusId, ct));
     [HttpGet("/api/v1/schools/{schoolId:guid}/campuses/by-code/{code}")]
     [RequirePermission(PermissionCatalog.Campus.View)]
     public async Task<ActionResult<ApiResponse<CampusDto>>> ByCode(Guid schoolId, string code, CancellationToken ct) => Result(await service.GetByCodeAsync(schoolId, code, ct));
@@ -41,4 +45,6 @@ public sealed class CampusesController(ICampusService service) : ApiControllerBa
     [HttpPost("{id:guid}/reactivate"), RequirePermission(PermissionCatalog.Campus.Activate)] public async Task<ActionResult<ApiResponse<CampusDto>>> Reactivate(Guid id, CancellationToken ct) => Result(await service.ReactivateAsync(id, ct));
     [HttpPost("{id:guid}/archive"), RequirePermission(PermissionCatalog.Campus.Archive)] public async Task<ActionResult<ApiResponse<CampusDto>>> Archive(Guid id, CancellationToken ct) => Result(await service.ArchiveAsync(id, ct));
     private ActionResult<ApiResponse<CampusDto>> Result(CampusDto? item) => item is null ? NotFound() : Ok(ApiResponse<CampusDto>.Ok(item));
+    private ActionResult<ApiResponse<PagedResult<CampusDto>>> Result(PagedResult<CampusDto>? items) =>
+        items is null ? NotFound() : Ok(ApiResponse<PagedResult<CampusDto>>.Ok(items));
 }

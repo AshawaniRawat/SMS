@@ -24,7 +24,7 @@ public interface IRoleManagementService
     Task<Result<RoleDto>> ArchiveAsync(Guid tenantId, Guid roleId, CancellationToken ct = default);
     Task<Result<bool>> AssignRoleAsync(Guid tenantId, Guid userId, Guid roleId, CancellationToken ct = default);
     Task<Result<bool>> RemoveRoleAsync(Guid tenantId, Guid userId, Guid roleId, CancellationToken ct = default);
-    Task<IReadOnlyCollection<RoleDto>> GetUserRolesAsync(Guid tenantId, Guid userId, CancellationToken ct = default);
+    Task<IReadOnlyCollection<RoleDto>?> GetUserRolesAsync(Guid tenantId, Guid userId, CancellationToken ct = default);
 }
 
 public static class RoleErrorCodes

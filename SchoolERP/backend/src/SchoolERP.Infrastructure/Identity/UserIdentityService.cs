@@ -70,8 +70,9 @@ public sealed class UserIdentityService(UserManager<ApplicationUser> userManager
     public async Task<bool> IsEmailUniqueAsync(string email, CancellationToken ct = default) =>
         await userManager.FindByEmailAsync(email.Trim()) is null;
 
-    public async Task<UserSummaryDto?> GetUserByIdAsync(Guid id, CancellationToken ct = default) =>
-        await userManager.Users.AsNoTracking().Where(x => x.Id == id).Select(Project()).SingleOrDefaultAsync(ct);
+    public async Task<UserSummaryDto?> GetTenantUserByIdAsync(Guid tenantId, Guid id, CancellationToken ct = default) =>
+        await userManager.Users.AsNoTracking().Where(x => x.Id == id && x.TenantId == tenantId)
+            .Select(Project()).SingleOrDefaultAsync(ct);
 
     public async Task<UserSummaryDto?> FindByEmailAsync(string email, CancellationToken ct = default)
     {
@@ -87,13 +88,13 @@ public sealed class UserIdentityService(UserManager<ApplicationUser> userManager
         return new PagedResult<UserSummaryDto>(items, page.PageNumber, page.PageSize, total);
     }
 
-    public Task<Result<bool>> ActivateUserAsync(Guid id, CancellationToken ct = default) => ChangeState(id, "activated", x => x.Activate(), false, ct);
-    public Task<Result<bool>> SuspendUserAsync(Guid id, CancellationToken ct = default) => ChangeState(id, "suspended", x => x.Suspend(), true, ct);
-    public Task<Result<bool>> DeactivateUserAsync(Guid id, CancellationToken ct = default) => ChangeState(id, "deactivated", x => x.Deactivate(Now()), true, ct);
+    public Task<Result<bool>> ActivateTenantUserAsync(Guid tenantId, Guid id, CancellationToken ct = default) => ChangeState(tenantId, id, "activated", x => x.Activate(), false, ct);
+    public Task<Result<bool>> SuspendTenantUserAsync(Guid tenantId, Guid id, CancellationToken ct = default) => ChangeState(tenantId, id, "suspended", x => x.Suspend(), true, ct);
+    public Task<Result<bool>> DeactivateTenantUserAsync(Guid tenantId, Guid id, CancellationToken ct = default) => ChangeState(tenantId, id, "deactivated", x => x.Deactivate(Now()), true, ct);
 
-    private async Task<Result<bool>> ChangeState(Guid id, string action, Action<ApplicationUser> transition, bool lockout, CancellationToken ct)
+    private async Task<Result<bool>> ChangeState(Guid tenantId, Guid id, string action, Action<ApplicationUser> transition, bool lockout, CancellationToken ct)
     {
-        var user = await userManager.FindByIdAsync(id.ToString());
+        var user = await userManager.Users.SingleOrDefaultAsync(x => x.Id == id && x.TenantId == tenantId, ct);
         if (user is null) return Result<bool>.Fail("User was not found.");
         try { transition(user); }
         catch (Exception ex) { return Result<bool>.Fail(ex.Message); }

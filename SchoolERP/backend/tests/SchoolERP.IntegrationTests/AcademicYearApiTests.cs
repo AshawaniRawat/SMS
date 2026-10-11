@@ -15,8 +15,9 @@ public sealed class AcademicYearApiTests(PostgresFixture database)
     {
         var tenant = Tenant.Create("Academic API", "academic-api-" + Guid.NewGuid().ToString("N")); tenant.Activate(DateTime.UtcNow);
         var school = School.Create(tenant, "Academic School", "AS"); school.Activate(DateTime.UtcNow);
+        var siblingSchool = School.Create(tenant, "Academic Sibling", "AS2"); siblingSchool.Activate(DateTime.UtcNow);
         var other = Tenant.Create("Other Academic", "academic-other-" + Guid.NewGuid().ToString("N")); other.Activate(DateTime.UtcNow);
-        await using (var setup = database.CreateContext(platformAccess: true)) { setup.Schools.Add(school); setup.Tenants.Add(other); await setup.SaveChangesAsync(); }
+        await using (var setup = database.CreateContext(platformAccess: true)) { setup.Schools.AddRange(school, siblingSchool); setup.Tenants.Add(other); await setup.SaveChangesAsync(); }
 
         await using var factory = new ApiFactory(database.ConnectionString, tenantId: tenant.Id); using var client = factory.CreateClient();
         var firstRequest = new CreateAcademicYearRequest(school.Id, "2026-27", "ay2026", new(2026, 4, 1), new(2027, 3, 31));
@@ -33,6 +34,9 @@ public sealed class AcademicYearApiTests(PostgresFixture database)
         second = await Read(await client.PostAsync($"/api/v1/academic-years/{second.Id}/close", null)); Assert.False(second.IsCurrent); Assert.False(second.IsAdmissionOpen);
         second = await Read(await client.PostAsync($"/api/v1/academic-years/{second.Id}/archive", null)); Assert.Equal(AcademicYearStatus.Archived, second.Status);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/v1/schools/{school.Id}/academic-years/by-code/ay2026")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/v1/schools/{school.Id}/academic-years/{first.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/schools/{siblingSchool.Id}/academic-years/{first.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/schools/{Guid.NewGuid()}/academic-years")).StatusCode);
 
         await using var otherFactory = new ApiFactory(database.ConnectionString, tenantId: other.Id); using var otherClient = otherFactory.CreateClient();
         Assert.Equal(HttpStatusCode.NotFound, (await otherClient.GetAsync($"/api/v1/academic-years/{first.Id}")).StatusCode);

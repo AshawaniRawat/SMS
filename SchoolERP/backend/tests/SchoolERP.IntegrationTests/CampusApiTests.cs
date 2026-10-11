@@ -15,8 +15,9 @@ public sealed class CampusApiTests(PostgresFixture database)
     {
         var tenant = Tenant.Create("Campus API", "campus-api-" + Guid.NewGuid().ToString("N")); tenant.Activate(DateTime.UtcNow);
         var school = School.Create(tenant, "Campus School", "CS"); school.Activate(DateTime.UtcNow);
+        var siblingSchool = School.Create(tenant, "Sibling School", "SS"); siblingSchool.Activate(DateTime.UtcNow);
         var otherTenant = Tenant.Create("Other", "campus-other-" + Guid.NewGuid().ToString("N"));
-        await using (var setup = database.CreateContext(platformAccess: true)) { setup.Schools.Add(school); setup.Tenants.Add(otherTenant); await setup.SaveChangesAsync(); }
+        await using (var setup = database.CreateContext(platformAccess: true)) { setup.Schools.AddRange(school, siblingSchool); setup.Tenants.Add(otherTenant); await setup.SaveChangesAsync(); }
 
         await using var factory = new ApiFactory(database.ConnectionString, tenantId: tenant.Id); using var client = factory.CreateClient();
         var firstResponse = await client.PostAsJsonAsync("/api/v1/campuses", new CreateCampusRequest(school.Id, "Main Campus", "main"));
@@ -30,10 +31,13 @@ public sealed class CampusApiTests(PostgresFixture database)
         Assert.Equal(CampusStatus.Active, (await Read(await client.PostAsync($"/api/v1/campuses/{second.Id}/reactivate", null))).Status);
         Assert.Equal(CampusStatus.Archived, (await Read(await client.PostAsync($"/api/v1/campuses/{second.Id}/archive", null))).Status);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/v1/schools/{school.Id}/campuses/by-code/main")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/v1/schools/{school.Id}/campuses/{first.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/schools/{siblingSchool.Id}/campuses/{first.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/v1/schools/{Guid.NewGuid()}/campuses")).StatusCode);
 
         await using var otherFactory = new ApiFactory(database.ConnectionString, tenantId: otherTenant.Id); using var other = otherFactory.CreateClient();
         Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync($"/api/v1/campuses/{first.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await other.PostAsJsonAsync("/api/v1/campuses", new CreateCampusRequest(school.Id, "Invalid", "X"))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.PostAsJsonAsync("/api/v1/campuses", new CreateCampusRequest(school.Id, "Invalid", "X"))).StatusCode);
     }
 
     private static async Task<CampusDto> Read(HttpResponseMessage response)

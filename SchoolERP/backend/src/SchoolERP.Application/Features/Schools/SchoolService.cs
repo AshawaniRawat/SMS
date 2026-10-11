@@ -7,6 +7,7 @@ using SchoolERP.Application.Common.Pagination;
 using SchoolERP.Application.Exceptions;
 using SchoolERP.Domain.Entities;
 using SchoolERP.Domain.Enums;
+using SchoolERP.Application.Security;
 
 namespace SchoolERP.Application.Features.Schools;
 
@@ -15,6 +16,7 @@ public sealed class SchoolService(
     ICurrentTenant currentTenant,
     IValidator<CreateSchoolRequest> createValidator,
     IValidator<SchoolProfileRequest> profileValidator,
+    IResourceScopeValidator scope,
     TimeProvider timeProvider) : ISchoolService
 {
     public async Task<SchoolDto> CreateAsync(CreateSchoolRequest request, CancellationToken cancellationToken = default)
@@ -37,6 +39,7 @@ public sealed class SchoolService(
     public async Task<SchoolDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         RequireTenant();
+        if (!scope.CanAccessSchool(id)) return null;
         return await context.Schools.AsNoTracking().Where(x => x.Id == id).Select(Project()).SingleOrDefaultAsync(cancellationToken);
     }
 
@@ -44,14 +47,16 @@ public sealed class SchoolService(
     {
         RequireTenant();
         var normalized = School.NormalizeCode(code);
-        return await context.Schools.AsNoTracking().Where(x => x.Code == normalized).Select(Project()).SingleOrDefaultAsync(cancellationToken);
+        return await context.Schools.AsNoTracking()
+            .Where(x => x.Code == normalized && (!scope.SchoolId.HasValue || x.Id == scope.SchoolId))
+            .Select(Project()).SingleOrDefaultAsync(cancellationToken);
     }
 
     public Task<PagedResult<SchoolDto>> ListAsync(PagedRequest page, string? search, SchoolStatus? status,
         SchoolBoardType? boardType, CancellationToken cancellationToken = default)
     {
         RequireTenant();
-        var query = context.Schools.AsNoTracking();
+        var query = context.Schools.AsNoTracking().Where(x => !scope.SchoolId.HasValue || x.Id == scope.SchoolId);
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim().ToLowerInvariant();
@@ -69,6 +74,7 @@ public sealed class SchoolService(
         await profileValidator.ValidateAndThrowAsync(request, cancellationToken);
         var tenantId = RequireTenant();
         await EnsureOperationalTenantAsync(tenantId, cancellationToken);
+        if (!scope.CanAccessSchool(id)) return null;
         var school = await context.Schools.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (school is null) return null;
         ApplyProfile(school, request);
@@ -89,6 +95,7 @@ public sealed class SchoolService(
     {
         var tenantId = RequireTenant();
         await EnsureOperationalTenantAsync(tenantId, cancellationToken);
+        if (!scope.CanAccessSchool(id)) return null;
         var school = await context.Schools.SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (school is null) return null;
         change(school);

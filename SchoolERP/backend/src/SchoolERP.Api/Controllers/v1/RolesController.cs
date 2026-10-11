@@ -109,7 +109,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     {
         if (!OwnTenant(tenantId)) return NotFound();
         var result = await roles.GetUserRolesAsync(tenantId, userId, ct);
-        return Ok(ApiResponse<IReadOnlyCollection<RoleDto>>.Ok(result));
+        return result is null ? NotFound() : Ok(ApiResponse<IReadOnlyCollection<RoleDto>>.Ok(result));
     }
 
     private bool OwnTenant(Guid tenantId) => currentUser.IsAuthenticated && currentUser.TenantId == tenantId;
