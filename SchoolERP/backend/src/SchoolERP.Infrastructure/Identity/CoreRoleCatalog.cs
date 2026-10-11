@@ -8,13 +8,13 @@ public static class CoreRoleCatalog
 
     public static IReadOnlyList<Definition> All { get; } =
     [
-        Role(1, "PLATFORM_SUPER_ADMIN", "Platform Super Admin", RoleType.Platform),
-        Role(2, "TENANT_OWNER", "Tenant Owner", RoleType.Tenant), Role(3, "SCHOOL_ADMIN", "School Admin", RoleType.School),
-        Role(4, "PRINCIPAL", "Principal", RoleType.School), Role(5, "VICE_PRINCIPAL", "Vice Principal", RoleType.School),
+        Role(1, SystemRoleCodes.PlatformSuperAdmin, "Platform Super Admin", RoleType.Platform),
+        Role(2, SystemRoleCodes.TenantOwner, "Tenant Owner", RoleType.Tenant), Role(3, SystemRoleCodes.SchoolAdmin, "School Admin", RoleType.School),
+        Role(4, SystemRoleCodes.Principal, "Principal", RoleType.School), Role(5, "VICE_PRINCIPAL", "Vice Principal", RoleType.School),
         Role(6, "ACADEMIC_COORDINATOR", "Academic Coordinator", RoleType.School), Role(7, "ADMISSION_MANAGER", "Admission Manager", RoleType.School),
-        Role(8, "RECEPTIONIST", "Receptionist", RoleType.School), Role(9, "ACCOUNTANT", "Accountant", RoleType.School),
-        Role(10, "FINANCE_MANAGER", "Finance Manager", RoleType.Tenant), Role(11, "HR_MANAGER", "HR Manager", RoleType.Tenant),
-        Role(12, "TEACHER", "Teacher", RoleType.School), Role(13, "CLASS_TEACHER", "Class Teacher", RoleType.School),
+        Role(8, "RECEPTIONIST", "Receptionist", RoleType.School), Role(9, SystemRoleCodes.Accountant, "Accountant", RoleType.School),
+        Role(10, "FINANCE_MANAGER", "Finance Manager", RoleType.Tenant), Role(11, SystemRoleCodes.HrManager, "HR Manager", RoleType.Tenant),
+        Role(12, SystemRoleCodes.Teacher, "Teacher", RoleType.School), Role(13, "CLASS_TEACHER", "Class Teacher", RoleType.School),
         Role(14, "SUBJECT_TEACHER", "Subject Teacher", RoleType.School), Role(15, "EXAM_CONTROLLER", "Exam Controller", RoleType.School),
         Role(16, "LIBRARIAN", "Librarian", RoleType.School), Role(17, "TRANSPORT_MANAGER", "Transport Manager", RoleType.Tenant),
         Role(18, "DRIVER", "Driver", RoleType.Campus), Role(19, "HOSTEL_WARDEN", "Hostel Warden", RoleType.Campus),

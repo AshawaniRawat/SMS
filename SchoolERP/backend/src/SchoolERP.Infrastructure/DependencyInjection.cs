@@ -17,6 +17,7 @@ using SchoolERP.Application.Features.Authentication;
 using SchoolERP.Application.Security;
 using SchoolERP.Application.Features.Roles;
 using SchoolERP.Application.Features.Permissions;
+using SchoolERP.Application.Features.RolePermissions;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -36,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<ConcurrencyTokenInterceptor>();
         services.AddScoped<DatabaseSeeder>();
         services.AddScoped<PermissionSeeder>();
+        services.AddScoped<RolePermissionSeeder>();
         services.AddSingleton(TimeProvider.System);
         var identitySettings = configuration.GetSection(IdentitySettings.SectionName).Get<IdentitySettings>() ?? new IdentitySettings();
         services.Configure<IdentitySettings>(configuration.GetSection(IdentitySettings.SectionName));
@@ -89,6 +91,8 @@ public static class DependencyInjection
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.AddScoped<IRoleManagementService, RoleManagementService>();
         services.AddScoped<IPermissionCatalogService, PermissionCatalogService>();
+        services.AddSingleton<IRolePermissionCompatibilityService, RolePermissionCompatibilityService>();
+        services.AddScoped<IRolePermissionService, RolePermissionService>();
         services.Configure<EmailDeliverySettings>(configuration.GetSection(EmailDeliverySettings.SectionName));
         services.AddOptions<DataProtectionTokenProviderOptions>()
             .Configure<IOptions<PasswordResetOptions>>((tokenOptions, passwordReset) =>

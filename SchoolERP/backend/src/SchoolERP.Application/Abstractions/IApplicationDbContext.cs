@@ -10,4 +10,5 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<Campus> Campuses { get; }
     DbSet<AcademicYear> AcademicYears { get; }
     DbSet<Permission> Permissions { get; }
+    DbSet<RolePermission> RolePermissions { get; }
 }

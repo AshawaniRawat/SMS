@@ -63,11 +63,11 @@ public static partial class PermissionCatalog
         var rows = new List<PermissionDefinition>();
         Add(rows, PermissionScope.Platform, Platform.ViewDashboard, Platform.ManageTenants, Platform.ViewAudit, Platform.ManageSettings);
         Add(rows, PermissionScope.Platform, Tenant.View, Tenant.Edit, Tenant.Activate, Tenant.Suspend, Tenant.Archive);
-        Add(rows, PermissionScope.Tenant, School.View, School.Create, School.Edit, School.Activate, School.Suspend, School.Archive);
-        Add(rows, PermissionScope.School, Campus.View, Campus.Create, Campus.Edit, Campus.Activate, Campus.Suspend, Campus.Archive, Campus.SetMain);
+        Add(rows, PermissionScope.School, School.View, School.Create, School.Edit, School.Activate, School.Suspend, School.Archive);
+        Add(rows, PermissionScope.Campus, Campus.View, Campus.Create, Campus.Edit, Campus.Activate, Campus.Suspend, Campus.Archive, Campus.SetMain);
         Add(rows, PermissionScope.School, AcademicYear.View, AcademicYear.Create, AcademicYear.Edit, AcademicYear.Activate, AcademicYear.SetCurrent, AcademicYear.Close, AcademicYear.Archive, AcademicYear.ManageAdmissions);
-        Add(rows, PermissionScope.Tenant, User.View, User.Create, User.Edit, User.Activate, User.Suspend, User.Deactivate, User.AssignRole);
-        Add(rows, PermissionScope.Tenant, Role.View, Role.Create, Role.Edit, Role.Activate, Role.Deactivate, Role.Archive, Role.AssignUser);
+        Add(rows, PermissionScope.School, User.View, User.Create, User.Edit, User.Activate, User.Suspend, User.Deactivate, User.AssignRole);
+        Add(rows, PermissionScope.School, Role.View, Role.Create, Role.Edit, Role.Activate, Role.Deactivate, Role.Archive, Role.AssignUser);
         Add(rows, PermissionScope.School, Student.View, Student.Create, Student.Edit, Student.Archive, Student.Promote, Student.Export);
         Add(rows, PermissionScope.School, Admission.View, Admission.Create, Admission.Edit, Admission.Approve, Admission.Reject, Admission.ConvertToStudent);
         Add(rows, PermissionScope.Campus, Attendance.View, Attendance.Mark, Attendance.Edit, Attendance.Export, Attendance.Approve);
@@ -76,15 +76,15 @@ public static partial class PermissionCatalog
         Add(rows, PermissionScope.School, Exam.View, Exam.Create, Exam.Edit, Exam.EnterMarks, Exam.VerifyMarks, Exam.Publish, Exam.Export);
         Add(rows, PermissionScope.Campus, Homework.View, Homework.Create, Homework.Edit, Homework.Publish);
         Add(rows, PermissionScope.School, LMS.View, LMS.CreateContent, LMS.EditContent, LMS.PublishContent);
-        Add(rows, PermissionScope.Tenant, Employee.View, Employee.Create, Employee.Edit, Employee.Archive);
+        Add(rows, PermissionScope.School, Employee.View, Employee.Create, Employee.Edit, Employee.Archive);
         Add(rows, PermissionScope.Tenant, HR.View, HR.ManageLeave, HR.ApproveLeave);
         Add(rows, PermissionScope.Tenant, Payroll.View, Payroll.Configure, Payroll.Process, Payroll.Approve, Payroll.Export);
-        Add(rows, PermissionScope.Tenant, Transport.View, Transport.Configure, Transport.AssignVehicle, Transport.AssignStudent, Transport.TrackVehicle);
+        Add(rows, PermissionScope.School, Transport.View, Transport.Configure, Transport.AssignVehicle, Transport.AssignStudent, Transport.TrackVehicle);
         Add(rows, PermissionScope.School, Library.View, Library.ManageCatalog, Library.IssueBook, Library.ReturnBook, Library.ManageFine);
-        Add(rows, PermissionScope.Tenant, Inventory.View, Inventory.Create, Inventory.Edit, Inventory.Issue, Inventory.Receive, Inventory.Archive);
+        Add(rows, PermissionScope.School, Inventory.View, Inventory.Create, Inventory.Edit, Inventory.Issue, Inventory.Receive, Inventory.Archive);
         Add(rows, PermissionScope.Campus, Hostel.View, Hostel.Configure, Hostel.AssignStudent, Hostel.ManageRoom);
-        Add(rows, PermissionScope.Tenant, Communication.View, Communication.Send, Communication.Broadcast, Communication.ManageTemplate);
-        Add(rows, PermissionScope.Tenant, Report.View, Report.Export);
+        Add(rows, PermissionScope.School, Communication.View, Communication.Send, Communication.Broadcast, Communication.ManageTemplate);
+        Add(rows, PermissionScope.School, Report.View, Report.Export);
         Add(rows, PermissionScope.Tenant, Audit.View, Audit.Export);
         return rows.AsReadOnly();
     }

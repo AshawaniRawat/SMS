@@ -18,6 +18,7 @@ public sealed class SchoolErpDbContext(
     public DbSet<Campus> Campuses => Set<Campus>();
     public DbSet<AcademicYear> AcademicYears => Set<AcademicYear>();
     public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     // Properties on the context make the cached EF model use each context's tenant values.

@@ -12,6 +12,7 @@ public sealed class DatabaseSeeder(SchoolErpDbContext context, IOptions<Database
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         await new PermissionSeeder(context).SeedAsync(cancellationToken);
+        await new RolePermissionSeeder(context).SeedAsync(cancellationToken);
         if (!environment.IsDevelopment() || !options.Value.SeedDevelopmentData) return;
         // Only a platform entity is seeded; tenant-owned writes need validated tenant context.
         if (await context.Tenants.AnyAsync(tenant => tenant.Slug == "demo-workspace", cancellationToken)) return;

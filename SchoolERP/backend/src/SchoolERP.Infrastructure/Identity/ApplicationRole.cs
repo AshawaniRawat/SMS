@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using SchoolERP.Domain.Interfaces;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Domain.Exceptions;
+using SchoolERP.Domain.Entities;
 
 namespace SchoolERP.Infrastructure.Identity;
 
@@ -21,6 +22,7 @@ public sealed class ApplicationRole : IdentityRole<Guid>, IAuditableEntity
     public DateTime? UpdatedAt { get; set; }
     public Guid? CreatedBy { get; set; }
     public Guid? UpdatedBy { get; set; }
+    public ICollection<RolePermission> RolePermissions { get; } = new List<RolePermission>();
 
     public static ApplicationRole CreateTenant(Guid tenantId, string code, string displayName, RoleType type,
         string? description = null, int? sortOrder = null)

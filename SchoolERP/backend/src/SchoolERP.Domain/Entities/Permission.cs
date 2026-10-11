@@ -27,6 +27,7 @@ public sealed partial class Permission : AuditableEntity
     public bool IsActive { get; private set; }
     public int SortOrder { get; private set; }
     public string? Group { get; private set; }
+    public ICollection<RolePermission> RolePermissions { get; } = new List<RolePermission>();
 
     public static Permission CreateFromDefinition(PermissionDefinition definition) =>
         new(definition ?? throw new ArgumentNullException(nameof(definition)));
