@@ -1,0 +1,10 @@
+using SchoolERP.Application.Features.Departments;using SchoolERP.Domain.Entities;using SchoolERP.Domain.Enums;using SchoolERP.Domain.Exceptions;using SchoolERP.Domain.Interfaces;using Xunit;
+namespace SchoolERP.UnitTests;
+public sealed class DepartmentManagementTests{
+ [Fact]public void Create_sets_ownership_draft_and_normalizes_code(){var t=Guid.NewGuid();var s=Guid.NewGuid();var c=Guid.NewGuid();var x=Department.Create(t,s,c," Mathematics "," math_01 ",DepartmentType.Academic,0,email:"math@example.com");Assert.Equal((t,s,c),(x.TenantId,x.SchoolId,x.CampusId));Assert.Equal("MATH_01",x.Code);Assert.Equal(DepartmentStatus.Draft,x.Status);Assert.Equal(0,x.DisplayOrder);Assert.True(x.Type.IsAcademic());Assert.IsAssignableFrom<ITenantEntity>(x);}
+ [Theory][InlineData("A B")][InlineData("A@B")][InlineData("")]public void Invalid_code_is_rejected(string code)=>Assert.Throws<DomainException>(()=>Department.NormalizeCode(code));
+ [Fact]public void Negative_display_order_is_rejected()=>Assert.Throws<DomainException>(()=>Department.Create(Guid.NewGuid(),Guid.NewGuid(),null,"X","X",DepartmentType.Other,-1));
+ [Fact]public void Invalid_email_is_rejected()=>Assert.Throws<DomainException>(()=>Department.Create(Guid.NewGuid(),Guid.NewGuid(),null,"X","X",DepartmentType.Other,0,email:"bad"));
+ [Fact]public void Lifecycle_and_archived_read_only_are_enforced(){var x=Department.Create(Guid.NewGuid(),Guid.NewGuid(),null,"X","X",DepartmentType.Other,0);x.Activate(DateTime.UtcNow);Assert.Equal(DepartmentStatus.Active,x.Status);Assert.Throws<DomainException>(()=>x.Archive(DateTime.UtcNow));x.Deactivate(DateTime.UtcNow);x.Archive(DateTime.UtcNow);Assert.Throws<DomainException>(()=>x.UpdateDetails("Y",null,DepartmentType.Other,0,null,null,null,null,null,DateTime.UtcNow));}
+ [Fact]public void Requests_cannot_change_ownership_or_campus(){var names=typeof(UpdateDepartmentRequest).GetProperties().Select(x=>x.Name);Assert.DoesNotContain("TenantId",names);Assert.DoesNotContain("SchoolId",names);Assert.DoesNotContain("CampusId",names);Assert.DoesNotContain("Code",names);Assert.DoesNotContain("Status",names);}
+}

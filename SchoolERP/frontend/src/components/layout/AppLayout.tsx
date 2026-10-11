@@ -13,6 +13,8 @@ import {
   CalendarDays,
   BookOpen,
   Layers,
+  BookMarked,
+  Network,
 } from "lucide-react";
 import { session } from "@/auth/session";
 export function AppLayout() {
@@ -97,6 +99,20 @@ export function AppLayout() {
               className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold"
             >
               <Layers size={18} /> Sections
+            </NavLink>
+          )}
+          {session.hasPermission("Subject.View") && (
+            <NavLink
+              to="/subjects"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold"
+            >
+              <BookMarked size={18} /> Subjects
+            </NavLink>
+          )}
+          {session.hasPermission("Department.View") && (
+            <NavLink to="/departments" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold">
+              <Network size={18} /> Departments
             </NavLink>
           )}
           {session.hasPermission("School.View") && (

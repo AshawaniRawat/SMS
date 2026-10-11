@@ -11,6 +11,9 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<AcademicYear> AcademicYears { get; }
     DbSet<SchoolClass> SchoolClasses { get; }
     DbSet<ClassSection> ClassSections { get; }
+    DbSet<Subject> Subjects { get; }
+    DbSet<ClassSubject> ClassSubjects { get; }
+    DbSet<Department> Departments { get; }
     DbSet<Permission> Permissions { get; }
     DbSet<RolePermission> RolePermissions { get; }
 }

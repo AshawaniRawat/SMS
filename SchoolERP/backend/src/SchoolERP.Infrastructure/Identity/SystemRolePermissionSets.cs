@@ -23,7 +23,7 @@ public static class SystemRolePermissionSets
             [SystemRoleCodes.SchoolAdmin] = PermissionCatalog.All.Where(x => x.Scope is Domain.Enums.PermissionScope.School or Domain.Enums.PermissionScope.Campus or Domain.Enums.PermissionScope.Self).Select(x => x.Code).ToArray(),
             [SystemRoleCodes.Principal] =
             [
-                PermissionCatalog.School.View, PermissionCatalog.School.ViewDashboard, PermissionCatalog.Campus.View, PermissionCatalog.AcademicYear.View,PermissionCatalog.Class.View,PermissionCatalog.Class.Create,PermissionCatalog.Class.Edit,PermissionCatalog.Class.Activate,PermissionCatalog.Class.Deactivate,PermissionCatalog.Section.View,PermissionCatalog.Section.Create,PermissionCatalog.Section.Edit,PermissionCatalog.Section.Activate,PermissionCatalog.Section.Deactivate,
+                PermissionCatalog.School.View, PermissionCatalog.School.ViewDashboard, PermissionCatalog.Campus.View, PermissionCatalog.AcademicYear.View,PermissionCatalog.Class.View,PermissionCatalog.Class.Create,PermissionCatalog.Class.Edit,PermissionCatalog.Class.Activate,PermissionCatalog.Class.Deactivate,PermissionCatalog.Section.View,PermissionCatalog.Section.Create,PermissionCatalog.Section.Edit,PermissionCatalog.Section.Activate,PermissionCatalog.Section.Deactivate,PermissionCatalog.Subject.View,PermissionCatalog.Subject.Create,PermissionCatalog.Subject.Edit,PermissionCatalog.Subject.Activate,PermissionCatalog.Subject.Deactivate,PermissionCatalog.Subject.ManageClassMapping,PermissionCatalog.Department.View,PermissionCatalog.Department.Create,PermissionCatalog.Department.Edit,PermissionCatalog.Department.Activate,PermissionCatalog.Department.Deactivate,
                 PermissionCatalog.Student.View, PermissionCatalog.Admission.View, PermissionCatalog.Attendance.View,
                 PermissionCatalog.Exam.View, PermissionCatalog.Exam.VerifyMarks, PermissionCatalog.Exam.Publish,
                 PermissionCatalog.Homework.View, PermissionCatalog.Employee.View, PermissionCatalog.Report.View,
@@ -31,7 +31,7 @@ public static class SystemRolePermissionSets
             ],
             [SystemRoleCodes.Teacher] =
             [
-                PermissionCatalog.Class.View,PermissionCatalog.Section.View,PermissionCatalog.Student.View, PermissionCatalog.Attendance.View, PermissionCatalog.Attendance.Mark,
+                PermissionCatalog.Class.View,PermissionCatalog.Section.View,PermissionCatalog.Subject.View,PermissionCatalog.Department.View,PermissionCatalog.Student.View, PermissionCatalog.Attendance.View, PermissionCatalog.Attendance.Mark,
                 PermissionCatalog.Timetable.View, PermissionCatalog.Exam.View, PermissionCatalog.Exam.EnterMarks,
                 PermissionCatalog.Homework.View, PermissionCatalog.Homework.Create, PermissionCatalog.Homework.Edit,
                 PermissionCatalog.LMS.View, PermissionCatalog.LMS.CreateContent, PermissionCatalog.Communication.View
@@ -40,7 +40,7 @@ public static class SystemRolePermissionSets
             [PermissionCatalog.Fee.View, PermissionCatalog.Fee.Collect, PermissionCatalog.Fee.EditCollection,
                 PermissionCatalog.Report.View, PermissionCatalog.Report.Export],
             [SystemRoleCodes.HrManager] =
-            [PermissionCatalog.Employee.View, PermissionCatalog.Employee.Create, PermissionCatalog.Employee.Edit,
+            [PermissionCatalog.Department.View,PermissionCatalog.Employee.View, PermissionCatalog.Employee.Create, PermissionCatalog.Employee.Edit,
                 PermissionCatalog.HR.View, PermissionCatalog.HR.ManageLeave, PermissionCatalog.HR.ApproveLeave,
                 PermissionCatalog.Payroll.View]
         };

@@ -19,6 +19,9 @@ public sealed class SchoolErpDbContext(
     public DbSet<AcademicYear> AcademicYears => Set<AcademicYear>();
     public DbSet<SchoolClass> SchoolClasses => Set<SchoolClass>();
     public DbSet<ClassSection> ClassSections => Set<ClassSection>();
+    public DbSet<Subject> Subjects => Set<Subject>();
+    public DbSet<ClassSubject> ClassSubjects => Set<ClassSubject>();
+    public DbSet<Department> Departments => Set<Department>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -78,6 +81,8 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
         catch (DbUpdateException exception) when (IsSchoolClassCodeConflict(exception)) { throw new SchoolClassCodeConflictException(); }
         catch (DbUpdateException exception) when (IsClassSectionCodeConflict(exception)) { throw new ClassSectionCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsSubjectCodeConflict(exception)) { throw new SubjectCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsDepartmentCodeConflict(exception)) { throw new DepartmentCodeConflictException(); }
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -97,6 +102,8 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
         catch (DbUpdateException exception) when (IsSchoolClassCodeConflict(exception)) { throw new SchoolClassCodeConflictException(); }
         catch (DbUpdateException exception) when (IsClassSectionCodeConflict(exception)) { throw new ClassSectionCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsSubjectCodeConflict(exception)) { throw new SubjectCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsDepartmentCodeConflict(exception)) { throw new DepartmentCodeConflictException(); }
     }
 
     private static bool IsTenantSlugConflict(DbUpdateException exception) =>
@@ -125,4 +132,8 @@ public sealed class SchoolErpDbContext(
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_school_classes_school_year_code" };
     private static bool IsClassSectionCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_class_sections_class_code" };
+    private static bool IsSubjectCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_subjects_school_year_code" };
+    private static bool IsDepartmentCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_departments_school_code" };
 }

@@ -34,5 +34,15 @@
 | `GET /api/v1/classes/{classId}/sections` | ClassSection collection | `Section.View` | global filter | parent class current-school predicate | route class | foreign/mismatched class is 404 |
 | `POST /api/v1/classes/{classId}/sections` | ClassSection | `Section.Create` | derived from class | derived from class | derived class/year | foreign parent is 404; invalid state/duplicate is 409 |
 | ClassSection mutation endpoints | ClassSection | matching Section permission | global filter | combined current-school predicate | immutable parent class | foreign resource is 404; invalid state is 409 |
+| `GET /api/v1/subjects` | Subject collection | `Subject.View` | global filter | trusted current school | academic-year filter validated | foreign rows excluded from data/count |
+| Subject detail/mutations | Subject | matching Subject permission | global filter | combined current-school predicate | academic year immutable | foreign resource is 404; invalid state is 409 |
+| `GET /api/v1/classes/{classId}/subjects` | ClassSubject collection | `Subject.View` | global filter | parent class current-school predicate | class academic year | foreign class is 404 |
+| ClassSubject assignment/bulk/removal | ClassSubject | `Subject.ManageClassMapping` | derived | class and subject current-school scoped | class/subject year must match | foreign resource is 404; cross-year is 409; bulk is atomic |
 
 Tenant-level users have no SchoolId or CampusId claim and can operate across schools in their tenant. School-scoped users are restricted to their SchoolId. Campus-scoped users are additionally restricted to their CampusId for campus resources.
+# P1-31 Department scope
+
+| Resource | Tenant scoped | School scoped | Campus scoped | Campus-scoped caller | Cross-boundary response |
+|---|---:|---:|---:|---|---|
+| Department | Yes | Yes | Optional | School-wide + own campus | Tenant/school/campus resources are hidden (404) |
+

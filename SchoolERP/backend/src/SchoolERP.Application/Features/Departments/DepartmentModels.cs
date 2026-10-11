@@ -1,0 +1,7 @@
+using SchoolERP.Domain.Enums;namespace SchoolERP.Application.Features.Departments;
+public sealed record CreateDepartmentRequest(Guid? CampusId,string Name,string Code,string? ShortName,DepartmentType Type,int DisplayOrder,string? HeadName,string? Email,string? Phone,string? Location,string? Description);
+public sealed record UpdateDepartmentRequest(string Name,string? ShortName,DepartmentType Type,int DisplayOrder,string? HeadName,string? Email,string? Phone,string? Location,string? Description);
+public sealed record ChangeDepartmentCodeRequest(string Code);
+public sealed record GetDepartmentsQuery(int PageNumber=1,int PageSize=20,Guid? CampusId=null,bool SchoolWideOnly=false,DepartmentType? Type=null,DepartmentStatus? Status=null,string? Search=null,string? SortBy=null,string? SortDirection=null);
+public sealed record DepartmentListItemDto(Guid Id,string Name,string Code,string? ShortName,DepartmentType Type,int DisplayOrder,Guid? CampusId,string? CampusName,string? HeadName,string? Email,string? Phone,DepartmentStatus Status,DateTime CreatedAt,DateTime? UpdatedAt);
+public sealed record DepartmentDetailsDto(Guid Id,string Name,string Code,string? ShortName,DepartmentType Type,int DisplayOrder,Guid? CampusId,string? CampusName,string? HeadName,string? Email,string? Phone,string? Location,string? Description,DepartmentStatus Status,DateTime? ActivatedAt,DateTime? DeactivatedAt,DateTime? ArchivedAt,DateTime CreatedAt,DateTime? UpdatedAt);
