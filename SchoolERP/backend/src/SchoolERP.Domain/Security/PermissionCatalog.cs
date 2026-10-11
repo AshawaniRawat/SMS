@@ -14,6 +14,7 @@ public static partial class PermissionCatalog
     public static class School { public const string View = "School.View", ViewDashboard = "School.ViewDashboard", Create = "School.Create", Edit = "School.Edit", Activate = "School.Activate", Suspend = "School.Suspend", Archive = "School.Archive"; }
     public static class Campus { public const string View = "Campus.View", Create = "Campus.Create", Edit = "Campus.Edit", Activate = "Campus.Activate", Suspend = "Campus.Suspend", Archive = "Campus.Archive", SetMain = "Campus.SetMain"; }
     public static class AcademicYear { public const string View = "AcademicYear.View", Create = "AcademicYear.Create", Edit = "AcademicYear.Edit", Activate = "AcademicYear.Activate", SetCurrent = "AcademicYear.SetCurrent", Close = "AcademicYear.Close", Archive = "AcademicYear.Archive", ManageAdmissions = "AcademicYear.ManageAdmissions"; }
+    public static class Class { public const string View="Class.View",Create="Class.Create",Edit="Class.Edit",Activate="Class.Activate",Deactivate="Class.Deactivate",Archive="Class.Archive"; }
     public static class User { public const string View = "User.View", Create = "User.Create", Edit = "User.Edit", Activate = "User.Activate", Suspend = "User.Suspend", Deactivate = "User.Deactivate", AssignRole = "User.AssignRole"; }
     public static class Role { public const string View = "Role.View", Create = "Role.Create", Edit = "Role.Edit", Activate = "Role.Activate", Deactivate = "Role.Deactivate", Archive = "Role.Archive", AssignUser = "Role.AssignUser", ManagePermissions = "Role.ManagePermissions"; }
     public static class Permission { public const string View = "Permission.View"; }
@@ -90,6 +91,7 @@ public static partial class PermissionCatalog
         // Appended to preserve deterministic IDs of the P1-18 catalog.
         Add(rows, PermissionScope.School, Role.ManagePermissions, Permission.View);
         Add(rows, PermissionScope.School, School.ViewDashboard);
+        Add(rows,PermissionScope.School,Class.View,Class.Create,Class.Edit,Class.Activate,Class.Deactivate,Class.Archive);
         return rows.AsReadOnly();
     }
 

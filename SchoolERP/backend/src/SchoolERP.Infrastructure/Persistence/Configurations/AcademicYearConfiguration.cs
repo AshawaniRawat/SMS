@@ -35,5 +35,6 @@ public sealed class AcademicYearConfiguration : IEntityTypeConfiguration<Academi
         builder.HasIndex(x => new { x.SchoolId, x.Status }).HasDatabaseName("ix_academic_years_school_id_status");
         builder.HasIndex(x => new { x.SchoolId, x.StartDate }).HasDatabaseName("ix_academic_years_school_id_start_date");
         builder.HasIndex(x => x.SchoolId).IsUnique().HasFilter("is_current = true").HasDatabaseName("ux_academic_years_school_id_current");
+        builder.HasAlternateKey(x=>new{x.TenantId,x.SchoolId,x.Id}).HasName("ak_academic_years_tenant_school_id");
     }
 }

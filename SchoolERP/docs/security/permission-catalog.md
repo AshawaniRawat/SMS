@@ -79,3 +79,7 @@ The catalog contains 130 system-managed permissions. This inventory is grouped b
 
 ## Audit
 `Audit.View`, `Audit.Export`
+
+## Class
+
+`Class.View`, `Class.Create`, `Class.Edit`, `Class.Activate`, `Class.Deactivate`, `Class.Archive`

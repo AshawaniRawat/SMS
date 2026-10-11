@@ -17,6 +17,7 @@ public sealed class SchoolErpDbContext(
     public DbSet<School> Schools => Set<School>();
     public DbSet<Campus> Campuses => Set<Campus>();
     public DbSet<AcademicYear> AcademicYears => Set<AcademicYear>();
+    public DbSet<SchoolClass> SchoolClasses => Set<SchoolClass>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -74,6 +75,7 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsMainCampusConflict(exception)) { throw new MainCampusConflictException(); }
         catch (DbUpdateException exception) when (IsAcademicYearCodeConflict(exception)) { throw new AcademicYearCodeConflictException(); }
         catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
+        catch (DbUpdateException exception) when (IsSchoolClassCodeConflict(exception)) { throw new SchoolClassCodeConflictException(); }
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -91,6 +93,7 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsMainCampusConflict(exception)) { throw new MainCampusConflictException(); }
         catch (DbUpdateException exception) when (IsAcademicYearCodeConflict(exception)) { throw new AcademicYearCodeConflictException(); }
         catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
+        catch (DbUpdateException exception) when (IsSchoolClassCodeConflict(exception)) { throw new SchoolClassCodeConflictException(); }
     }
 
     private static bool IsTenantSlugConflict(DbUpdateException exception) =>
@@ -115,4 +118,6 @@ public sealed class SchoolErpDbContext(
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_academic_years_school_id_code" };
     private static bool IsCurrentAcademicYearConflict(DbUpdateException exception) => exception.InnerException is PostgresException
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_academic_years_school_id_current" };
+    private static bool IsSchoolClassCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_school_classes_school_year_code" };
 }

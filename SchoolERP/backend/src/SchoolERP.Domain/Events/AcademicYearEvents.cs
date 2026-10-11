@@ -6,3 +6,6 @@ public sealed record AcademicYearArchivedDomainEvent(Guid AcademicYearId, Guid S
 public sealed record AcademicYearMarkedCurrentDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
 public sealed record AcademicYearAdmissionsOpenedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
 public sealed record AcademicYearAdmissionsClosedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearUpdatedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearCodeChangedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);
+public sealed record AcademicYearLockDateChangedDomainEvent(Guid AcademicYearId, Guid SchoolId, Guid TenantId, DateTime OccurredAtUtc) : DomainEvent(OccurredAtUtc);

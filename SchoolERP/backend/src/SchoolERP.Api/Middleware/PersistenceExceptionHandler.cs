@@ -21,6 +21,8 @@ public sealed class PersistenceExceptionHandler(ILogger<PersistenceExceptionHand
             CampusArchivedReadOnlyException => (StatusCodes.Status409Conflict, exception.Message),
             MainCampusCannotBeSuspendedException => (StatusCodes.Status409Conflict, exception.Message),
             MainCampusCannotBeArchivedException => (StatusCodes.Status409Conflict, exception.Message),
+            SchoolClassCodeConflictException => (StatusCodes.Status409Conflict,exception.Message),
+            SchoolClassParentUnavailableException => (StatusCodes.Status409Conflict,exception.Message),
             ConcurrencyConflictException => (StatusCodes.Status409Conflict, "The record was changed by another operation."),
             TenantSlugConflictException => (StatusCodes.Status409Conflict, "A tenant with this slug already exists."),
             SchoolCodeConflictException => (StatusCodes.Status409Conflict, "A school with this code already exists in the tenant."),

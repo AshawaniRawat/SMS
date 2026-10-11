@@ -21,5 +21,13 @@
 | `POST /api/v1/campuses` | Campus | `Campus.Create` | derived | trusted current school | campus-scoped creation denied | 403/404 |
 | `PUT /api/v1/campuses/{id}` | Campus | `Campus.Edit` | global filter | combined predicate | own campus | 404; archived is 409 |
 | `POST /api/v1/campuses/{id}/{lifecycle}` | Campus lifecycle/main | matching Campus permission | global filter | combined predicate | own campus | 404; invalid transition is 409 |
+| `GET /api/v1/academic-years` | Academic Year collection | `AcademicYear.View` | global filter | trusted current school | parent school | foreign rows excluded from data/count |
+| `GET /api/v1/academic-years/{id}` | Academic Year | `AcademicYear.View` | global filter | combined current-school predicate | parent school | 404 |
+| `POST /api/v1/academic-years` | Academic Year | `AcademicYear.Create` | derived | trusted current school | parent school | no caller-supplied ownership |
+| Academic Year mutation endpoints | Academic Year | matching AcademicYear permission | global filter | combined current-school predicate | parent school | 404; invalid state is 409/400 |
+| `GET /api/v1/classes` | School Class collection | `Class.View` | global filter | trusted current school | n/a | foreign rows excluded from data/count |
+| `GET /api/v1/classes/{id}` | School Class | `Class.View` | global filter | combined current-school predicate | n/a | 404 |
+| `POST /api/v1/classes` | School Class | `Class.Create` | derived | trusted current school and scoped academic year | n/a | no caller-supplied tenant/school; invalid parent is 404/409 |
+| School Class mutation endpoints | School Class | matching Class permission | global filter | combined current-school predicate | n/a | 404; invalid parent/state or duplicate code is 409 |
 
 Tenant-level users have no SchoolId or CampusId claim and can operate across schools in their tenant. School-scoped users are restricted to their SchoolId. Campus-scoped users are additionally restricted to their CampusId for campus resources.

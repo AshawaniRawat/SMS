@@ -1,0 +1,1 @@
+namespace SchoolERP.Application.Exceptions;public sealed class SchoolClassCodeConflictException():Exception("Class.CodeAlreadyExists: A class with this code already exists in the academic year.");public sealed class SchoolClassParentUnavailableException():Exception("Class.AcademicYearUnavailable: The academic year is unavailable for class structure changes.");

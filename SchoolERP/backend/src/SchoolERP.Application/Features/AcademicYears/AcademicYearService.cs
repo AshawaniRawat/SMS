@@ -50,9 +50,11 @@ public sealed class AcademicYearService(IApplicationDbContext context, ICurrentT
     public async Task<AcademicYearDto?> UpdateAsync(Guid id, UpdateAcademicYearRequest request, CancellationToken ct = default)
     {
         await updateValidator.ValidateAndThrowAsync(request, ct); RequireTenant(); var year = await FindForWrite(id, ct); if (year is null) return null;
-        var code = AcademicYear.NormalizeCode(request.Code); await EnsureUniqueAndNonOverlapping(year.SchoolId, code, request.StartDate, request.EndDate, id, ct);
-        year.UpdateDetails(request.Name, request.StartDate, request.EndDate, request.Description, request.AdmissionStartDate, request.AdmissionEndDate, request.LockDate);
-        if (year.Code != code) year.ChangeCode(code); await context.SaveChangesAsync(ct); return Map(year);
+        var code = AcademicYear.NormalizeCode(request.Code);
+        if(year.Status==AcademicYearStatus.Draft){await EnsureUniqueAndNonOverlapping(year.SchoolId, code, request.StartDate, request.EndDate, id, ct);year.UpdateDetails(request.Name, request.StartDate, request.EndDate, request.Description, request.AdmissionStartDate, request.AdmissionEndDate, request.LockDate);if(year.Code!=code)year.ChangeCode(code,Now());year.RecordUpdated(Now());}
+        else if(year.Status==AcademicYearStatus.Active){if(request.StartDate!=year.StartDate||request.EndDate!=year.EndDate||code!=year.Code)throw new SchoolERP.Domain.Exceptions.DomainException("Active academic year dates and code are read-only.");year.UpdateActiveMetadata(request.Name,request.Description,request.AdmissionStartDate,request.AdmissionEndDate,request.LockDate,Now());}
+        else throw new SchoolERP.Domain.Exceptions.DomainException("Closed or archived academic years are read-only.");
+        await context.SaveChangesAsync(ct); return Map(year);
     }
 
     public async Task<AcademicYearDto?> ActivateAsync(Guid id, CancellationToken ct = default)
@@ -77,7 +79,7 @@ public sealed class AcademicYearService(IApplicationDbContext context, ICurrentT
     public Task<AcademicYearDto?> ArchiveAsync(Guid id, CancellationToken ct = default) => Change(id, x => x.Archive(Now()), ct);
     public async Task<AcademicYearDto?> OpenAdmissionsAsync(Guid id, OpenAdmissionsRequest request, CancellationToken ct = default) { await admissionsValidator.ValidateAndThrowAsync(request, ct); return await Change(id, x => x.OpenAdmissions(request.StartDate, request.EndDate, Now()), ct); }
     public Task<AcademicYearDto?> CloseAdmissionsAsync(Guid id, CancellationToken ct = default) => Change(id, x => x.CloseAdmissions(Now()), ct);
-    public async Task<AcademicYearDto?> SetLockDateAsync(Guid id,SetAcademicYearLockDateRequest request,CancellationToken ct=default){var y=await FindForWrite(id,ct);if(y is null)return null;if(y.Status is AcademicYearStatus.Closed or AcademicYearStatus.Archived)throw new SchoolERP.Domain.Exceptions.DomainException("Closed or archived academic years are read-only.");y.SetLockDate(request.LockDate);await context.SaveChangesAsync(ct);return Map(y);}
+    public async Task<AcademicYearDto?> SetLockDateAsync(Guid id,SetAcademicYearLockDateRequest request,CancellationToken ct=default){var y=await FindForWrite(id,ct);if(y is null)return null;if(y.Status is AcademicYearStatus.Closed or AcademicYearStatus.Archived)throw new SchoolERP.Domain.Exceptions.DomainException("Closed or archived academic years are read-only.");y.SetLockDate(request.LockDate,Now());await context.SaveChangesAsync(ct);return Map(y);}
     private async Task<AcademicYearDto?> Change(Guid id, Action<AcademicYear> action, CancellationToken ct) { RequireTenant(); var year = await FindForWrite(id, ct); if (year is null) return null; action(year); await context.SaveChangesAsync(ct); return Map(year); }
 
     private async Task<AcademicYear?> FindForWrite(Guid id, CancellationToken ct){var schoolId=await currentSchool.ResolveAsync(ct);return await context.AcademicYears.SingleOrDefaultAsync(x => x.Id == id&&x.SchoolId==schoolId&&(!scope.SchoolId.HasValue||x.SchoolId==scope.SchoolId),ct);}
