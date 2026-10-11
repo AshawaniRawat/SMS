@@ -1,6 +1,6 @@
 # Permission inventory
 
-The catalog contains 129 system-managed permissions. This inventory is grouped by its singular, case-sensitive module identifier.
+The catalog contains 130 system-managed permissions. This inventory is grouped by its singular, case-sensitive module identifier.
 
 ## Platform
 `Platform.ViewDashboard`, `Platform.ManageTenants`, `Platform.ViewAudit`, `Platform.ManageSettings`
@@ -9,7 +9,7 @@ The catalog contains 129 system-managed permissions. This inventory is grouped b
 `Tenant.View`, `Tenant.Edit`, `Tenant.Activate`, `Tenant.Suspend`, `Tenant.Archive`
 
 ## School
-`School.View`, `School.Create`, `School.Edit`, `School.Activate`, `School.Suspend`, `School.Archive`
+`School.View`, `School.ViewDashboard`, `School.Create`, `School.Edit`, `School.Activate`, `School.Suspend`, `School.Archive`
 
 ## Campus
 `Campus.View`, `Campus.Create`, `Campus.Edit`, `Campus.Activate`, `Campus.Suspend`, `Campus.Archive`, `Campus.SetMain`

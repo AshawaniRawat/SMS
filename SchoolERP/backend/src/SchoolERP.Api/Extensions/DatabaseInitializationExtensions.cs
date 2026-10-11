@@ -17,5 +17,6 @@ public static class DatabaseInitializationExtensions
         if (options.ApplyMigrationsOnStartup)
             await scope.ServiceProvider.GetRequiredService<SchoolErpDbContext>().Database.MigrateAsync(cancellationToken);
         await scope.ServiceProvider.GetRequiredService<DatabaseSeeder>().SeedAsync(cancellationToken);
+        await scope.ServiceProvider.GetRequiredService<DevelopmentAdminSeeder>().SeedAsync(cancellationToken);
     }
 }

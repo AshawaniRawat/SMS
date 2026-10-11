@@ -20,6 +20,8 @@ using SchoolERP.Application.Features.Permissions;
 using SchoolERP.Application.Features.RolePermissions;
 using SchoolERP.Application.Features.PlatformDashboard;
 using SchoolERP.Infrastructure.PlatformDashboard;
+using SchoolERP.Application.Features.SchoolDashboard;
+using SchoolERP.Infrastructure.SchoolDashboard;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -42,6 +44,8 @@ public static class DependencyInjection
         services.AddScoped<DatabaseSeeder>();
         services.AddScoped<PermissionSeeder>();
         services.AddScoped<RolePermissionSeeder>();
+        services.AddScoped<DevelopmentAdminSeeder>();
+        services.Configure<DevelopmentBootstrapOptions>(configuration.GetSection(DevelopmentBootstrapOptions.SectionName));
         services.AddSingleton(TimeProvider.System);
         var identitySettings = configuration.GetSection(IdentitySettings.SectionName).Get<IdentitySettings>() ?? new IdentitySettings();
         services.Configure<IdentitySettings>(configuration.GetSection(IdentitySettings.SectionName));
@@ -99,6 +103,7 @@ public static class DependencyInjection
         services.AddScoped<IRolePermissionService, RolePermissionService>();
         services.AddScoped<IUserPermissionService, UserPermissionService>();
         services.AddScoped<IPlatformDashboardService, PlatformDashboardService>();
+        services.AddScoped<ISchoolDashboardService, SchoolDashboardService>();
         services.Configure<PlatformDashboardOptions>(configuration.GetSection(PlatformDashboardOptions.SectionName));
         services.Configure<EmailDeliverySettings>(configuration.GetSection(EmailDeliverySettings.SectionName));
         services.AddOptions<DataProtectionTokenProviderOptions>()

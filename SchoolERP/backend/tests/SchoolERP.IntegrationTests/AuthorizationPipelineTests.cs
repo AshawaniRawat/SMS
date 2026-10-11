@@ -24,6 +24,15 @@ public sealed class AuthorizationPipelineTests
     }
 
     [Fact]
+    public void School_dashboard_declares_school_dashboard_permission()
+    {
+        var method = typeof(SchoolDashboardController).GetMethod(nameof(SchoolDashboardController.Get));
+        var attribute = Assert.Single(method!.GetCustomAttributes(typeof(RequirePermissionAttribute), true)
+            .Cast<RequirePermissionAttribute>());
+        Assert.Equal($"Permission:{PermissionCatalog.School.ViewDashboard}", attribute.Policy);
+    }
+
+    [Fact]
     public async Task Dynamic_provider_builds_permission_policy_and_handles_other_and_malformed_names()
     {
         var provider = new PermissionAuthorizationPolicyProvider(Options.Create(new AuthorizationOptions()));

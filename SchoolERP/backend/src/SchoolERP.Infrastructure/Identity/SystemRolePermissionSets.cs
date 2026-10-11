@@ -23,7 +23,7 @@ public static class SystemRolePermissionSets
             [SystemRoleCodes.SchoolAdmin] = PermissionCatalog.All.Where(x => x.Scope is Domain.Enums.PermissionScope.School or Domain.Enums.PermissionScope.Campus or Domain.Enums.PermissionScope.Self).Select(x => x.Code).ToArray(),
             [SystemRoleCodes.Principal] =
             [
-                PermissionCatalog.School.View, PermissionCatalog.Campus.View, PermissionCatalog.AcademicYear.View,
+                PermissionCatalog.School.View, PermissionCatalog.School.ViewDashboard, PermissionCatalog.Campus.View, PermissionCatalog.AcademicYear.View,
                 PermissionCatalog.Student.View, PermissionCatalog.Admission.View, PermissionCatalog.Attendance.View,
                 PermissionCatalog.Exam.View, PermissionCatalog.Exam.VerifyMarks, PermissionCatalog.Exam.Publish,
                 PermissionCatalog.Homework.View, PermissionCatalog.Employee.View, PermissionCatalog.Report.View,

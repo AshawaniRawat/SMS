@@ -11,7 +11,7 @@ public static partial class PermissionCatalog
 {
     public static class Platform { public const string ViewDashboard = "Platform.ViewDashboard", ManageTenants = "Platform.ManageTenants", ViewAudit = "Platform.ViewAudit", ManageSettings = "Platform.ManageSettings"; }
     public static class Tenant { public const string View = "Tenant.View", Edit = "Tenant.Edit", Activate = "Tenant.Activate", Suspend = "Tenant.Suspend", Archive = "Tenant.Archive"; }
-    public static class School { public const string View = "School.View", Create = "School.Create", Edit = "School.Edit", Activate = "School.Activate", Suspend = "School.Suspend", Archive = "School.Archive"; }
+    public static class School { public const string View = "School.View", ViewDashboard = "School.ViewDashboard", Create = "School.Create", Edit = "School.Edit", Activate = "School.Activate", Suspend = "School.Suspend", Archive = "School.Archive"; }
     public static class Campus { public const string View = "Campus.View", Create = "Campus.Create", Edit = "Campus.Edit", Activate = "Campus.Activate", Suspend = "Campus.Suspend", Archive = "Campus.Archive", SetMain = "Campus.SetMain"; }
     public static class AcademicYear { public const string View = "AcademicYear.View", Create = "AcademicYear.Create", Edit = "AcademicYear.Edit", Activate = "AcademicYear.Activate", SetCurrent = "AcademicYear.SetCurrent", Close = "AcademicYear.Close", Archive = "AcademicYear.Archive", ManageAdmissions = "AcademicYear.ManageAdmissions"; }
     public static class User { public const string View = "User.View", Create = "User.Create", Edit = "User.Edit", Activate = "User.Activate", Suspend = "User.Suspend", Deactivate = "User.Deactivate", AssignRole = "User.AssignRole"; }
@@ -89,6 +89,7 @@ public static partial class PermissionCatalog
         Add(rows, PermissionScope.Tenant, Audit.View, Audit.Export);
         // Appended to preserve deterministic IDs of the P1-18 catalog.
         Add(rows, PermissionScope.School, Role.ManagePermissions, Permission.View);
+        Add(rows, PermissionScope.School, School.ViewDashboard);
         return rows.AsReadOnly();
     }
 

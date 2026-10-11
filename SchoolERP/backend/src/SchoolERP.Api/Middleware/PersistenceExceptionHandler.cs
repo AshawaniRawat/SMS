@@ -16,6 +16,7 @@ public sealed class PersistenceExceptionHandler(ILogger<PersistenceExceptionHand
             TenantMismatchException => (StatusCodes.Status403Forbidden, "The operation is not allowed for this tenant."),
             ResourceNotFoundException => (StatusCodes.Status404NotFound, exception.Message),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Access is denied."),
+            SchoolSelectionRequiredException => (StatusCodes.Status409Conflict, exception.Message),
             ConcurrencyConflictException => (StatusCodes.Status409Conflict, "The record was changed by another operation."),
             TenantSlugConflictException => (StatusCodes.Status409Conflict, "A tenant with this slug already exists."),
             SchoolCodeConflictException => (StatusCodes.Status409Conflict, "A school with this code already exists in the tenant."),

@@ -1,0 +1,10 @@
+export interface SchoolHeader{schoolId:string;name:string;code:string;shortName?:string;status:string|number;logoUrl?:string;city?:string;state?:string;countryCode?:string}
+export interface DashboardSummary{totalCampuses:number;activeCampuses:number;totalUsers:number;activeUsers:number;pendingUsers:number;suspendedUsers:number;totalRoles:number;customRoles:number;activeAcademicYears:number;hasCurrentAcademicYear:boolean}
+export interface CurrentAcademicYear{id:string;name:string;code:string;startDate:string;endDate:string;status:string|number;isCurrent:boolean;isAdmissionOpen:boolean;lockDate?:string}
+export interface CampusPreview{id:string;name:string;code:string;status:string|number;isMainCampus:boolean;city?:string}
+export interface CampusSummary{total:number;draft:number;active:number;suspended:number;archived:number;mainCampusId?:string;mainCampusName?:string;preview:CampusPreview[]}
+export interface UserSummary{totalUsers:number;activeUsers:number;pendingUsers:number;suspendedUsers:number;lockedUsers:number;deactivatedUsers:number;unconfirmedEmailUsers:number}
+export interface RoleSummary{totalApplicableRoles:number;systemRoles:number;customRoles:number;activeRoles:number;inactiveRoles:number}
+export interface SetupHealth{schoolProfileConfigured:boolean;hasCampus:boolean;hasMainCampus:boolean;hasCurrentAcademicYear:boolean;hasActiveAdminUser:boolean;hasRolesConfigured:boolean;completionPercentage:number}
+export interface AttentionItem{code:string;title:string;description:string;severity:'Info'|'Warning'|'Critical'|number;actionPath?:string}
+export interface SchoolDashboard{school:SchoolHeader;summary:DashboardSummary;currentAcademicYear?:CurrentAcademicYear;campuses:CampusSummary;users:UserSummary;roles:RoleSummary;setupHealth:SetupHealth;attentionItems:AttentionItem[]}
