@@ -22,7 +22,7 @@ public sealed class SchoolConfiguration : IEntityTypeConfiguration<School>
         builder.Property(entity => entity.ShortName).HasColumnName("short_name").HasMaxLength(100);
         builder.Property(entity => entity.RegistrationNumber).HasColumnName("registration_number").HasMaxLength(100);
         builder.Property(entity => entity.AffiliationNumber).HasColumnName("affiliation_number").HasMaxLength(100);
-        builder.Property(entity => entity.BoardCode).HasColumnName("board_code").HasMaxLength(50);
+        builder.Property(entity => entity.BoardCode).HasColumnName("board_code").HasMaxLength(100);
         builder.Property(entity => entity.BoardType).HasColumnName("board_type").HasConversion<int>();
         builder.Property(entity => entity.Email).HasColumnName("email").HasMaxLength(320);
         builder.Property(entity => entity.Phone).HasColumnName("phone").HasMaxLength(30);

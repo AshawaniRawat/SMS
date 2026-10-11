@@ -10,7 +10,7 @@ public sealed class SchoolProfileRequestValidator : AbstractValidator<SchoolProf
         RuleFor(x => x.ShortName).MaximumLength(100);
         RuleFor(x => x.RegistrationNumber).MaximumLength(100);
         RuleFor(x => x.AffiliationNumber).MaximumLength(100);
-        RuleFor(x => x.BoardCode).MaximumLength(50);
+        RuleFor(x => x.BoardCode).MaximumLength(100);
         RuleFor(x => x.Email).EmailAddress().MaximumLength(320).When(x => !string.IsNullOrWhiteSpace(x.Email));
         RuleFor(x => x.Phone).MaximumLength(30);
         RuleFor(x => x.AlternatePhone).MaximumLength(30);

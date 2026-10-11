@@ -112,13 +112,14 @@ public sealed partial class School : AuditableEntity, ITenantEntity, ISoftDeleta
         string? logoUrl,
         string? timeZoneId,
         string? defaultCurrency,
-        string? principalName)
+        string? principalName,
+        DateTime? occurredOnUtc = null)
     {
         Name = name;
         ShortName = Optional(shortName, 100, nameof(ShortName));
         RegistrationNumber = Optional(registrationNumber, 100, nameof(RegistrationNumber));
         AffiliationNumber = Optional(affiliationNumber, 100, nameof(AffiliationNumber));
-        BoardCode = Optional(boardCode, 50, nameof(BoardCode));
+        BoardCode = Optional(boardCode, 100, nameof(BoardCode));
         BoardType = boardType;
         Email = Optional(email, 320, nameof(Email))?.ToLowerInvariant();
         Phone = Optional(phone, 30, nameof(Phone));
@@ -134,6 +135,8 @@ public sealed partial class School : AuditableEntity, ITenantEntity, ISoftDeleta
         TimeZoneId = Optional(timeZoneId, 100, nameof(TimeZoneId));
         DefaultCurrency = FixedCode(defaultCurrency, 3, nameof(DefaultCurrency));
         PrincipalName = Optional(principalName, 200, nameof(PrincipalName));
+        if (occurredOnUtc.HasValue)
+            AddDomainEvent(new SchoolProfileUpdatedDomainEvent(Id, TenantId, EnsureUtc(occurredOnUtc.Value)));
     }
 
     public void ChangeCode(string code) => Code = code;

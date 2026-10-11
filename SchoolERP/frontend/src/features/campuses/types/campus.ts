@@ -1,0 +1,6 @@
+export type CampusStatus=1|2|3|4;
+export interface CampusListItem{id:string;name:string;code:string;shortName:string|null;status:CampusStatus;isMainCampus:boolean;city:string|null;state:string|null;countryCode:string|null;phone:string|null;email:string|null;createdAt:string;updatedAt:string|null}
+export interface CampusDetails extends CampusListItem{alternatePhone:string|null;addressLine1:string|null;addressLine2:string|null;postalCode:string|null;timeZoneId:string|null;latitude:number|null;longitude:number|null;activatedAt:string|null;suspendedAt:string|null;archivedAt:string|null}
+export interface CampusRequest{name:string;code?:string;isMainCampus?:boolean;shortName:string|null;email:string|null;phone:string|null;alternatePhone:string|null;addressLine1:string|null;addressLine2:string|null;city:string|null;state:string|null;postalCode:string|null;countryCode:string|null;timeZoneId:string|null;latitude:number|null;longitude:number|null}
+export interface CampusFilters{pageNumber:number;pageSize:number;search?:string;status?:string;isMain?:boolean}
+export interface PagedResult<T>{items:T[];pageNumber:number;pageSize:number;totalCount:number;totalPages:number;hasPreviousPage:boolean;hasNextPage:boolean}

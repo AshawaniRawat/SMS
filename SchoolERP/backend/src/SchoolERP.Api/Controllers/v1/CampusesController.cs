@@ -12,15 +12,16 @@ public sealed class CampusesController(ICampusService service) : ApiControllerBa
 {
     [HttpPost]
     [RequirePermission(PermissionCatalog.Campus.Create)]
-    public async Task<ActionResult<ApiResponse<CampusDto>>> Create(CreateCampusRequest request, CancellationToken ct) { var item = await service.CreateAsync(request, ct); return CreatedAtAction(nameof(Get), new { id = item.Id }, ApiResponse<CampusDto>.Ok(item)); }
+    public async Task<ActionResult<ApiResponse<CampusDetailsDto>>> Create(CreateCampusRequest request, CancellationToken ct) { var item = await service.CreateCampusAsync(request, ct); return CreatedAtAction(nameof(Get), new { id = item.Id }, ApiResponse<CampusDetailsDto>.Ok(item)); }
     [HttpGet]
     [RequirePermission(PermissionCatalog.Campus.View)]
-    public async Task<ActionResult<ApiResponse<PagedResult<CampusDto>>>> List([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] Guid? schoolId = null, [FromQuery] string? search = null, [FromQuery] CampusStatus? status = null,
-        [FromQuery] bool? isMainCampus = null, CancellationToken ct = default) => Ok(ApiResponse<PagedResult<CampusDto>>.Ok(await service.ListAsync(new(pageNumber, pageSize), schoolId, search, status, isMainCampus, ct)));
+    public async Task<ActionResult<ApiResponse<PagedResult<CampusListItemDto>>>> List([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null, [FromQuery] CampusStatus? status = null, [FromQuery] bool? isMain = null,
+        [FromQuery] string? city = null, [FromQuery] string? sortBy = null, [FromQuery] string? sortDirection = null,
+        CancellationToken ct = default) => Ok(ApiResponse<PagedResult<CampusListItemDto>>.Ok(await service.GetCampusesAsync(new(pageNumber, pageSize, search, status, isMain, city, sortBy, sortDirection), ct)));
     [HttpGet("{id:guid}")]
     [RequirePermission(PermissionCatalog.Campus.View)]
-    public async Task<ActionResult<ApiResponse<CampusDto>>> Get(Guid id, CancellationToken ct) => Result(await service.GetByIdAsync(id, ct));
+    public async Task<ActionResult<ApiResponse<CampusDetailsDto>>> Get(Guid id, CancellationToken ct) { var item = await service.GetCampusAsync(id, ct); return item is null ? NotFound() : Ok(ApiResponse<CampusDetailsDto>.Ok(item)); }
     [HttpGet("/api/v1/schools/{schoolId:guid}/campuses")]
     [RequirePermission(PermissionCatalog.Campus.View)]
     public async Task<ActionResult<ApiResponse<PagedResult<CampusDto>>>> BySchool(Guid schoolId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
@@ -35,7 +36,7 @@ public sealed class CampusesController(ICampusService service) : ApiControllerBa
     public async Task<ActionResult<ApiResponse<CampusDto>>> ByCode(Guid schoolId, string code, CancellationToken ct) => Result(await service.GetByCodeAsync(schoolId, code, ct));
     [HttpPut("{id:guid}")]
     [RequirePermission(PermissionCatalog.Campus.Edit)]
-    public async Task<ActionResult<ApiResponse<CampusDto>>> Update(Guid id, CampusProfileRequest request, CancellationToken ct) => Result(await service.UpdateAsync(id, request, ct));
+    public async Task<ActionResult<ApiResponse<CampusDetailsDto>>> Update(Guid id, CampusProfileRequest request, CancellationToken ct) { var item = await service.UpdateCampusAsync(id, request, ct); return item is null ? NotFound() : Ok(ApiResponse<CampusDetailsDto>.Ok(item)); }
     [HttpPut("{id:guid}/code")]
     [RequirePermission(PermissionCatalog.Campus.Edit)]
     public async Task<ActionResult<ApiResponse<CampusDto>>> ChangeCode(Guid id, ChangeCampusCodeRequest request, CancellationToken ct) => Result(await service.ChangeCodeAsync(id, request, ct));

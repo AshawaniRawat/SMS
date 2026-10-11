@@ -3,22 +3,22 @@ using Microsoft.EntityFrameworkCore;
 using SchoolERP.Application.Abstractions;
 using SchoolERP.Application.Exceptions;
 using SchoolERP.Application.Features.SchoolDashboard;
+using SchoolERP.Application.Features.Schools;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Infrastructure.Identity;
 using SchoolERP.Infrastructure.Persistence.Context;
 
 namespace SchoolERP.Infrastructure.SchoolDashboard;
 
-public sealed class SchoolDashboardService(SchoolErpDbContext context, ICurrentUser currentUser,
-    ICurrentTenant currentTenant) : ISchoolDashboardService
+public sealed class SchoolDashboardService(SchoolErpDbContext context,
+    ICurrentSchoolResolver currentSchool) : ISchoolDashboardService
 {
     public async Task<SchoolDashboardDto> GetDashboardAsync(CancellationToken ct = default)
     {
-        if (!currentUser.IsAuthenticated || !currentTenant.IsAvailable || currentTenant.TenantId is not { } tenantId)
-            throw new TenantContextMissingException();
-        var schoolId = await ResolveSchoolId(tenantId, ct);
+        var schoolId = await currentSchool.ResolveAsync(ct);
         var school = await context.Schools.AsNoTracking().SingleOrDefaultAsync(x => x.Id == schoolId, ct)
             ?? throw new ResourceNotFoundException("School");
+        var tenantId = school.TenantId;
         var campusCounts = await context.Campuses.AsNoTracking().Where(x => x.SchoolId == schoolId)
             .GroupBy(x => x.Status).Select(x => new { x.Key, Count = x.Count() }).ToDictionaryAsync(x => x.Key, x => x.Count, ct);
         int Campus(CampusStatus status) => campusCounts.GetValueOrDefault(status);
@@ -67,13 +67,6 @@ public sealed class SchoolDashboardService(SchoolErpDbContext context, ICurrentU
             school.City, school.State, school.CountryCode), summary, currentYear, campusSummary, users, roleSummary, setup, attention);
     }
 
-    private async Task<Guid> ResolveSchoolId(Guid tenantId, CancellationToken ct)
-    {
-        if (currentUser.SchoolId is { } id) return id;
-        var schools = await context.Schools.AsNoTracking().Where(x => x.TenantId == tenantId && x.Status != SchoolStatus.Archived)
-            .Select(x => x.Id).Take(2).ToListAsync(ct);
-        return schools.Count switch { 1 => schools[0], 0 => throw new ResourceNotFoundException("School"), _ => throw new SchoolSelectionRequiredException() };
-    }
     private static IReadOnlyCollection<DashboardAttentionItemDto> BuildAttention(SchoolStatus status, SetupHealthDto setup, int unconfirmed, int suspendedCampuses)
     {
         var rows = new List<DashboardAttentionItemDto>();

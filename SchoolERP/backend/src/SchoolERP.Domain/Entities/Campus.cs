@@ -75,15 +75,17 @@ public sealed partial class Campus : AuditableEntity, ITenantEntity, ISoftDeleta
     {
         Name = name; ShortName = Optional(shortName, 100, nameof(ShortName)); Email = Optional(email, 320, nameof(Email))?.ToLowerInvariant();
         Phone = Optional(phone, 30, nameof(Phone)); AlternatePhone = Optional(alternatePhone, 30, nameof(AlternatePhone));
-        AddressLine1 = Optional(addressLine1, 250, nameof(AddressLine1)); AddressLine2 = Optional(addressLine2, 250, nameof(AddressLine2));
+        AddressLine1 = Optional(addressLine1, 200, nameof(AddressLine1)); AddressLine2 = Optional(addressLine2, 200, nameof(AddressLine2));
         City = Optional(city, 100, nameof(City)); State = Optional(state, 100, nameof(State)); PostalCode = Optional(postalCode, 20, nameof(PostalCode));
         CountryCode = FixedCode(countryCode, 2, nameof(CountryCode)); TimeZoneId = Optional(timeZoneId, 100, nameof(TimeZoneId));
         if (latitude is < -90 or > 90) throw new DomainException("Campus Latitude must be between -90 and 90.");
         if (longitude is < -180 or > 180) throw new DomainException("Campus Longitude must be between -180 and 180.");
+        if (latitude.HasValue != longitude.HasValue) throw new DomainException("Campus coordinates must include both latitude and longitude.");
         Latitude = latitude; Longitude = longitude;
     }
 
-    public void ChangeCode(string code) => Code = code;
+    public void RecordProfileUpdated(DateTime occurredOnUtc) => AddDomainEvent(new CampusUpdatedDomainEvent(Id, SchoolId, TenantId, Utc(occurredOnUtc)));
+    public void ChangeCode(string code, DateTime? occurredOnUtc = null) { Code = code; if (occurredOnUtc.HasValue) AddDomainEvent(new CampusCodeChangedDomainEvent(Id, SchoolId, TenantId, Utc(occurredOnUtc.Value))); }
     public void MarkAsMainCampus(DateTime occurredOnUtc) { if (IsMainCampus) return; IsMainCampus = true; AddDomainEvent(new CampusMarkedAsMainDomainEvent(Id, SchoolId, TenantId, Utc(occurredOnUtc))); }
     public void RemoveMainCampusDesignation() => IsMainCampus = false;
     public void Activate(DateTime occurredOnUtc) => ChangeStatus(CampusStatus.Draft, CampusStatus.Active, occurredOnUtc);

@@ -623,8 +623,8 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                         .HasColumnName("archived_at");
 
                     b.Property<string>("BoardCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("board_code");
 
                     b.Property<int?>("BoardType")

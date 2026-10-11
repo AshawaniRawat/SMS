@@ -3,6 +3,10 @@ using SchoolERP.Domain.Enums;
 namespace SchoolERP.Application.Features.Campuses;
 public interface ICampusService
 {
+    Task<PagedResult<CampusListItemDto>> GetCampusesAsync(GetCampusesQuery query, CancellationToken ct = default);
+    Task<CampusDetailsDto?> GetCampusAsync(Guid id, CancellationToken ct = default);
+    Task<CampusDetailsDto> CreateCampusAsync(CreateCampusRequest request, CancellationToken ct = default);
+    Task<CampusDetailsDto?> UpdateCampusAsync(Guid id, CampusProfileRequest request, CancellationToken ct = default);
     Task<CampusDto> CreateAsync(CreateCampusRequest request, CancellationToken ct = default);
     Task<CampusDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<CampusDto?> GetForSchoolAsync(Guid schoolId, Guid campusId, CancellationToken ct = default);

@@ -5,6 +5,7 @@ using SchoolERP.Application.Features.Schools;
 using SchoolERP.Application.Features.Campuses;
 using SchoolERP.Application.Features.AcademicYears;
 using SchoolERP.Application.Security;
+using SchoolERP.Application.Features.SchoolProfile;
 namespace SchoolERP.Application.Common;
 public static class DependencyInjection
 {
@@ -13,6 +14,8 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<ISchoolService, SchoolService>();
+        services.AddScoped<ICurrentSchoolResolver, CurrentSchoolResolver>();
+        services.AddScoped<ISchoolProfileService, SchoolProfileService>();
         services.AddScoped<ICampusService, CampusService>();
         services.AddScoped<IAcademicYearService, AcademicYearService>();
         services.AddScoped<IResourceScopeValidator, ResourceScopeValidator>();
