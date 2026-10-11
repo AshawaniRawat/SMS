@@ -8,4 +8,6 @@ public interface ICurrentUser
     string? Email { get; }
     bool IsAuthenticated { get; }
     IReadOnlyCollection<string> Roles { get; }
+    bool HasTenantClaim => TenantId.HasValue;
+    bool HasMalformedTenantClaim => false;
 }

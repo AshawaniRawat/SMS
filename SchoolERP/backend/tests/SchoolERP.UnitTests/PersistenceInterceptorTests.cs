@@ -7,6 +7,7 @@ using SchoolERP.Domain.Entities;
 using SchoolERP.Infrastructure.Persistence.Context;
 using SchoolERP.Infrastructure.Persistence.Interceptors;
 using Xunit;
+using SchoolERP.Domain.Interfaces;
 
 namespace SchoolERP.UnitTests;
 
@@ -32,6 +33,42 @@ public sealed class PersistenceInterceptorTests
     }
 
     [Fact]
+    public async Task Missing_tenant_rejects_create_and_explicit_platform_requires_target_tenant()
+    {
+        await using var missing = CreateContext(null);
+        missing.Schools.Add(School.CreateForCurrentTenant("Missing", "MISS"));
+        await Assert.ThrowsAsync<TenantContextMissingException>(() => missing.SaveChangesAsync());
+        await using var platform = CreateContext(null, platformAccess: true);
+        platform.Schools.Add(School.CreateForCurrentTenant("Platform Missing", "PMISS"));
+        await Assert.ThrowsAsync<TenantContextMissingException>(() => platform.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task Attached_foreign_modified_and_deleted_entities_are_rejected()
+    {
+        var current = Guid.NewGuid(); var foreign = Guid.NewGuid();
+        await using var modified = CreateContext(current);
+        var foreignSchool = School.Create(foreign, "Foreign", "FOREIGN");
+        modified.Attach(foreignSchool); modified.Entry(foreignSchool).State = EntityState.Modified;
+        await Assert.ThrowsAsync<TenantMismatchException>(() => modified.SaveChangesAsync());
+        await using var deleted = CreateContext(current);
+        var deletedForeign = School.Create(foreign, "Foreign Delete", "FDELETE");
+        deleted.Attach(deletedForeign); deleted.Entry(deletedForeign).State = EntityState.Deleted;
+        await Assert.ThrowsAsync<TenantMismatchException>(() => deleted.SaveChangesAsync());
+    }
+
+    [Fact]
+    public void Every_concrete_tenant_entity_has_a_global_query_filter()
+    {
+        using var context = CreateContext(Guid.NewGuid());
+        var tenantTypes = context.Model.GetEntityTypes().Where(x => !x.ClrType.IsAbstract &&
+            typeof(ITenantEntity).IsAssignableFrom(x.ClrType)).ToArray();
+        Assert.NotEmpty(tenantTypes);
+        Assert.All(tenantTypes, x => Assert.NotNull(x.GetQueryFilter()));
+        Assert.DoesNotContain(context.Model.GetEntityTypes(), x => x.ClrType == typeof(Tenant) && x.GetQueryFilter() is not null);
+    }
+
+    [Fact]
     public async Task DeleteBecomesUtcTimestampedSoftDelete()
     {
         var tenantId = Guid.NewGuid();
@@ -46,10 +83,10 @@ public sealed class PersistenceInterceptorTests
         Assert.NotNull(school.UpdatedAt);
     }
 
-    private static SchoolErpDbContext CreateContext(Guid? tenantId)
+    private static SchoolErpDbContext CreateContext(Guid? tenantId, bool platformAccess = false)
     {
         var tenant = new CurrentTenant(tenantId);
-        var platform = new PlatformAccess(false);
+        var platform = new PlatformAccess(platformAccess);
         var options = new DbContextOptionsBuilder<SchoolErpDbContext>()
             .UseNpgsql("Host=localhost;Database=unused;Username=unused")
             .AddInterceptors(

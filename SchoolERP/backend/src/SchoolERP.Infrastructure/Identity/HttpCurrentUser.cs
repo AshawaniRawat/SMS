@@ -13,5 +13,7 @@ public sealed class HttpCurrentUser(IHttpContextAccessor accessor) : ICurrentUse
     public Guid? CampusId => GuidClaim(CustomClaimTypes.CampusId);
     public string? Email => Principal?.FindFirstValue(ClaimTypes.Email) ?? Principal?.FindFirstValue("email");
     public IReadOnlyCollection<string> Roles => Principal?.FindAll(ClaimTypes.Role).Select(x => x.Value).Distinct().ToArray() ?? [];
+    public bool HasTenantClaim => Principal?.HasClaim(x => x.Type == CustomClaimTypes.TenantId) == true;
+    public bool HasMalformedTenantClaim => HasTenantClaim && (!TenantId.HasValue || TenantId.Value == Guid.Empty);
     private Guid? GuidClaim(string type) => Guid.TryParse(Principal?.FindFirstValue(type), out var value) ? value : null;
 }

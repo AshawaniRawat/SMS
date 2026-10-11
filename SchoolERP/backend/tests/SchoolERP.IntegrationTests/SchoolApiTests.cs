@@ -32,6 +32,11 @@ public sealed class SchoolApiTests(PostgresFixture database)
         Assert.Equal("SCHOOL-01", school.Code);
         Assert.Equal(HttpStatusCode.Conflict, (await firstClient.PostAsJsonAsync("/api/v1/schools", create)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await firstClient.GetAsync($"/api/v1/schools/{school.Id}")).StatusCode);
+        firstClient.DefaultRequestHeaders.Add("X-Tenant-Id", secondTenant.Id.ToString());
+        Assert.Equal(HttpStatusCode.OK, (await firstClient.GetAsync($"/api/v1/schools/{school.Id}")).StatusCode);
+        firstClient.DefaultRequestHeaders.Remove("X-Tenant-Id");
+        Assert.Equal(HttpStatusCode.Forbidden, (await firstClient.PostAsJsonAsync("/api/v1/schools",
+            create with { TenantId = secondTenant.Id, Code = "SPOOF" })).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await firstClient.GetAsync("/api/v1/schools/by-code/school-01")).StatusCode);
 
         var updated = new SchoolProfileRequest("Updated School", ShortName: "US", City: "Delhi", CountryCode: "IN");

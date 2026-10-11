@@ -27,14 +27,24 @@ public sealed class TenantGuardInterceptor(
 
     private void GuardWrites(DbContext? context)
     {
-        if (context is null || platformDataAccess.IsEnabled) return;
+        if (context is null) return;
 
         foreach (var entry in context.ChangeTracker.Entries<ITenantEntity>().Where(entry =>
                      entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted))
         {
+            if (platformDataAccess.IsEnabled)
+            {
+                if (entry.State == EntityState.Added && entry.Entity.TenantId == Guid.Empty)
+                    throw new TenantContextMissingException();
+                if (entry.State != EntityState.Added && entry.Property(nameof(ITenantEntity.TenantId)).IsModified)
+                    throw new TenantMismatchException();
+                continue;
+            }
+
             if (!currentTenant.IsAvailable || !currentTenant.TenantId.HasValue)
             {
-                logger.LogWarning("Tenant-owned write rejected because tenant context is missing.");
+                logger.LogWarning("Tenant-owned {Operation} rejected for {EntityType} because tenant context is missing.",
+                    entry.State, entry.Metadata.ClrType.Name);
                 throw new TenantContextMissingException();
             }
 
@@ -45,7 +55,8 @@ public sealed class TenantGuardInterceptor(
             var tenantWasChanged = entry.State != EntityState.Added && entry.Property(nameof(ITenantEntity.TenantId)).IsModified;
             if (entry.Entity.TenantId != tenantId || tenantWasChanged)
             {
-                logger.LogWarning("Cross-tenant write rejected for entity type {EntityType}.", entry.Metadata.ClrType.Name);
+                logger.LogWarning("Cross-tenant {Operation} rejected for {EntityType}; current tenant {CurrentTenantId}.",
+                    entry.State, entry.Metadata.ClrType.Name, tenantId);
                 throw new TenantMismatchException();
             }
         }
