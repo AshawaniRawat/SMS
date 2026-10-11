@@ -734,9 +734,14 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SchoolERP.Infrastructure.Identity.ApplicationRole", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("code");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -756,19 +761,47 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("description");
 
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("display_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
                     b.Property<bool>("IsSystemRole")
                         .HasColumnType("boolean")
                         .HasColumnName("is_system_role");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("name");
 
                     b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("normalized_name");
+
+                    b.Property<int?>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -781,11 +814,450 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_roles");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_roles_global_code")
+                        .HasFilter("tenant_id IS NULL");
+
+                    b.HasIndex("IsSystemRole")
+                        .HasDatabaseName("ix_roles_is_system_role");
+
                     b.HasIndex("NormalizedName")
                         .IsUnique()
                         .HasDatabaseName("ux_roles_normalized_name");
 
-                    b.ToTable("roles", (string)null);
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_roles_status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_roles_tenant_id");
+
+                    b.HasIndex("Type")
+                        .HasDatabaseName("ix_roles_type");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_roles_tenant_id_code")
+                        .HasFilter("tenant_id IS NOT NULL");
+
+                    b.HasIndex("TenantId", "Status")
+                        .HasDatabaseName("ix_roles_tenant_id_status");
+
+                    b.ToTable("roles", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_roles_scope", "(is_system_role AND tenant_id IS NULL) OR (NOT is_system_role AND tenant_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_roles_status", "status BETWEEN 1 AND 3");
+
+                            t.HasCheckConstraint("ck_roles_type", "type BETWEEN 1 AND 4");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000001"),
+                            Code = "PLATFORM_SUPER_ADMIN",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000001",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Platform Super Admin",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "PLATFORM_SUPER_ADMIN",
+                            NormalizedName = "PLATFORM_SUPER_ADMIN",
+                            SortOrder = 10,
+                            Status = 1,
+                            Type = 1
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000002"),
+                            Code = "TENANT_OWNER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000002",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Tenant Owner",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "TENANT_OWNER",
+                            NormalizedName = "TENANT_OWNER",
+                            SortOrder = 20,
+                            Status = 1,
+                            Type = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000003"),
+                            Code = "SCHOOL_ADMIN",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000003",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "School Admin",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "SCHOOL_ADMIN",
+                            NormalizedName = "SCHOOL_ADMIN",
+                            SortOrder = 30,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000004"),
+                            Code = "PRINCIPAL",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000004",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Principal",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "PRINCIPAL",
+                            NormalizedName = "PRINCIPAL",
+                            SortOrder = 40,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000005"),
+                            Code = "VICE_PRINCIPAL",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000005",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Vice Principal",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "VICE_PRINCIPAL",
+                            NormalizedName = "VICE_PRINCIPAL",
+                            SortOrder = 50,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000006"),
+                            Code = "ACADEMIC_COORDINATOR",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000006",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Academic Coordinator",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "ACADEMIC_COORDINATOR",
+                            NormalizedName = "ACADEMIC_COORDINATOR",
+                            SortOrder = 60,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000007"),
+                            Code = "ADMISSION_MANAGER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000007",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Admission Manager",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "ADMISSION_MANAGER",
+                            NormalizedName = "ADMISSION_MANAGER",
+                            SortOrder = 70,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000008"),
+                            Code = "RECEPTIONIST",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000008",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Receptionist",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "RECEPTIONIST",
+                            NormalizedName = "RECEPTIONIST",
+                            SortOrder = 80,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000009"),
+                            Code = "ACCOUNTANT",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000009",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Accountant",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "ACCOUNTANT",
+                            NormalizedName = "ACCOUNTANT",
+                            SortOrder = 90,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000010"),
+                            Code = "FINANCE_MANAGER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000010",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Finance Manager",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "FINANCE_MANAGER",
+                            NormalizedName = "FINANCE_MANAGER",
+                            SortOrder = 100,
+                            Status = 1,
+                            Type = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000011"),
+                            Code = "HR_MANAGER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000011",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "HR Manager",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "HR_MANAGER",
+                            NormalizedName = "HR_MANAGER",
+                            SortOrder = 110,
+                            Status = 1,
+                            Type = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000012"),
+                            Code = "TEACHER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000012",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Teacher",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "TEACHER",
+                            NormalizedName = "TEACHER",
+                            SortOrder = 120,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000013"),
+                            Code = "CLASS_TEACHER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000013",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Class Teacher",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "CLASS_TEACHER",
+                            NormalizedName = "CLASS_TEACHER",
+                            SortOrder = 130,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000014"),
+                            Code = "SUBJECT_TEACHER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000014",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Subject Teacher",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "SUBJECT_TEACHER",
+                            NormalizedName = "SUBJECT_TEACHER",
+                            SortOrder = 140,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000015"),
+                            Code = "EXAM_CONTROLLER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000015",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Exam Controller",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "EXAM_CONTROLLER",
+                            NormalizedName = "EXAM_CONTROLLER",
+                            SortOrder = 150,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000016"),
+                            Code = "LIBRARIAN",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000016",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Librarian",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "LIBRARIAN",
+                            NormalizedName = "LIBRARIAN",
+                            SortOrder = 160,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000017"),
+                            Code = "TRANSPORT_MANAGER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000017",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Transport Manager",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "TRANSPORT_MANAGER",
+                            NormalizedName = "TRANSPORT_MANAGER",
+                            SortOrder = 170,
+                            Status = 1,
+                            Type = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000018"),
+                            Code = "DRIVER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000018",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Driver",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "DRIVER",
+                            NormalizedName = "DRIVER",
+                            SortOrder = 180,
+                            Status = 1,
+                            Type = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000019"),
+                            Code = "HOSTEL_WARDEN",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000019",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Hostel Warden",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "HOSTEL_WARDEN",
+                            NormalizedName = "HOSTEL_WARDEN",
+                            SortOrder = 190,
+                            Status = 1,
+                            Type = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000020"),
+                            Code = "INVENTORY_MANAGER",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000020",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Inventory Manager",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "INVENTORY_MANAGER",
+                            NormalizedName = "INVENTORY_MANAGER",
+                            SortOrder = 200,
+                            Status = 1,
+                            Type = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000021"),
+                            Code = "IT_ADMIN",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000021",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "IT Admin",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "IT_ADMIN",
+                            NormalizedName = "IT_ADMIN",
+                            SortOrder = 210,
+                            Status = 1,
+                            Type = 2
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000022"),
+                            Code = "COUNSELLOR",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000022",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Counsellor",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "COUNSELLOR",
+                            NormalizedName = "COUNSELLOR",
+                            SortOrder = 220,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000023"),
+                            Code = "NURSE",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000023",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Nurse",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "NURSE",
+                            NormalizedName = "NURSE",
+                            SortOrder = 230,
+                            Status = 1,
+                            Type = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000024"),
+                            Code = "SECURITY_GUARD",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000024",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Security Guard",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "SECURITY_GUARD",
+                            NormalizedName = "SECURITY_GUARD",
+                            SortOrder = 240,
+                            Status = 1,
+                            Type = 4
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000025"),
+                            Code = "PARENT",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000025",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Parent",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "PARENT",
+                            NormalizedName = "PARENT",
+                            SortOrder = 250,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000026"),
+                            Code = "STUDENT",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000026",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Student",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "STUDENT",
+                            NormalizedName = "STUDENT",
+                            SortOrder = 260,
+                            Status = 1,
+                            Type = 3
+                        },
+                        new
+                        {
+                            Id = new Guid("a1170000-0000-0000-0000-000000000027"),
+                            Code = "AUDITOR",
+                            ConcurrencyStamp = "system-role-a1170000000000000000000000000027",
+                            CreatedAt = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DisplayName = "Auditor",
+                            IsActive = true,
+                            IsSystemRole = true,
+                            Name = "AUDITOR",
+                            NormalizedName = "AUDITOR",
+                            SortOrder = 270,
+                            Status = 1,
+                            Type = 2
+                        });
                 });
 
             modelBuilder.Entity("SchoolERP.Infrastructure.Identity.ApplicationUser", b =>
@@ -1189,6 +1661,14 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("SchoolERP.Infrastructure.Identity.ApplicationRole", b =>
+                {
+                    b.HasOne("SchoolERP.Domain.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("SchoolERP.Infrastructure.Identity.ApplicationUser", b =>

@@ -11,6 +11,7 @@ See [architecture](docs/architecture.md) for dependencies and tenant-isolation r
 Authentication includes rotating refresh-token sessions and self-service logout/session revocation. See [logout and sessions](docs/security/logout-and-sessions.md) for the API flow and the stateless access-token limitation.
 Password recovery uses short-lived ASP.NET Identity tokens, enumeration-safe responses, and session revocation. See [password recovery](docs/security/password-recovery.md).
 Email ownership confirmation uses a separate 24-hour Identity token provider and enumeration-safe resend flow. See [email verification](docs/security/email-verification.md).
+Role management supports protected system roles, tenant custom roles, lifecycle controls, and scoped Identity assignments. See [roles](docs/security/roles.md).
 
 ## Folder structure
 

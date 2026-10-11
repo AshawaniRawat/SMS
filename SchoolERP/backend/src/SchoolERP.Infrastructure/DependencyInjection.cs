@@ -15,6 +15,7 @@ using SchoolERP.Application.Features.Identity;
 using SchoolERP.Infrastructure.Identity;
 using SchoolERP.Application.Features.Authentication;
 using SchoolERP.Application.Security;
+using SchoolERP.Application.Features.Roles;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -84,6 +85,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
         services.AddScoped<IEmailVerificationService, EmailVerificationService>();
+        services.AddScoped<IRoleManagementService, RoleManagementService>();
         services.Configure<EmailDeliverySettings>(configuration.GetSection(EmailDeliverySettings.SectionName));
         services.AddOptions<DataProtectionTokenProviderOptions>()
             .Configure<IOptions<PasswordResetOptions>>((tokenOptions, passwordReset) =>
