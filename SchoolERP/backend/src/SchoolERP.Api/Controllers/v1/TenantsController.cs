@@ -3,13 +3,15 @@ using SchoolERP.Application.Common.Pagination;
 using SchoolERP.Application.Features.Tenants;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Shared.Models;
+using SchoolERP.Api.Security;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.Api.Controllers.v1;
 
-// TODO(P1-auth): Require the future PlatformSuperAdmin authorization policy.
 public sealed class TenantsController(ITenantService tenantService) : ApiControllerBase
 {
     [HttpPost]
+    [RequirePermission(PermissionCatalog.Platform.ManageTenants)]
     public async Task<ActionResult<ApiResponse<TenantDto>>> Create(
         CreateTenantRequest request, CancellationToken cancellationToken)
     {
@@ -18,6 +20,7 @@ public sealed class TenantsController(ITenantService tenantService) : ApiControl
     }
 
     [HttpGet]
+    [RequirePermission(PermissionCatalog.Tenant.View)]
     public async Task<ActionResult<ApiResponse<PagedResult<TenantDto>>>> List(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
@@ -30,6 +33,7 @@ public sealed class TenantsController(ITenantService tenantService) : ApiControl
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission(PermissionCatalog.Tenant.View)]
     public async Task<ActionResult<ApiResponse<TenantDto>>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var tenant = await tenantService.GetByIdAsync(id, cancellationToken);
@@ -37,6 +41,7 @@ public sealed class TenantsController(ITenantService tenantService) : ApiControl
     }
 
     [HttpGet("by-slug/{slug}")]
+    [RequirePermission(PermissionCatalog.Tenant.View)]
     public async Task<ActionResult<ApiResponse<TenantDto>>> GetBySlug(string slug, CancellationToken cancellationToken)
     {
         var tenant = await tenantService.GetBySlugAsync(slug, cancellationToken);
@@ -44,18 +49,22 @@ public sealed class TenantsController(ITenantService tenantService) : ApiControl
     }
 
     [HttpPost("{id:guid}/activate")]
+    [RequirePermission(PermissionCatalog.Tenant.Activate)]
     public Task<ActionResult<ApiResponse<TenantDto>>> Activate(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => tenantService.ActivateAsync(id, cancellationToken));
 
     [HttpPost("{id:guid}/suspend")]
+    [RequirePermission(PermissionCatalog.Tenant.Suspend)]
     public Task<ActionResult<ApiResponse<TenantDto>>> Suspend(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => tenantService.SuspendAsync(id, cancellationToken));
 
     [HttpPost("{id:guid}/reactivate")]
+    [RequirePermission(PermissionCatalog.Tenant.Activate)]
     public Task<ActionResult<ApiResponse<TenantDto>>> Reactivate(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => tenantService.ReactivateAsync(id, cancellationToken));
 
     [HttpPost("{id:guid}/archive")]
+    [RequirePermission(PermissionCatalog.Tenant.Archive)]
     public Task<ActionResult<ApiResponse<TenantDto>>> Archive(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => tenantService.ArchiveAsync(id, cancellationToken));
 

@@ -13,6 +13,7 @@ using SchoolERP.Domain.Enums;
 using SchoolERP.Infrastructure.Identity;
 using SchoolERP.Infrastructure.Persistence.Context;
 using Xunit;
+using SchoolERP.Infrastructure.Persistence.Seed;
 
 namespace SchoolERP.IntegrationTests;
 
@@ -25,13 +26,15 @@ public sealed class RoleApiTests(PostgresFixture database)
         Guid tenantId; Guid otherTenantId; string email;
         await using (var context = database.CreateContext(platformAccess: true))
         {
+            await new PermissionSeeder(context).SeedAsync(); await new RolePermissionSeeder(context).SeedAsync();
             var tenant = Tenant.Create("API Role Tenant", $"api-role-{Guid.NewGuid():N}"); tenant.Activate(DateTime.UtcNow);
             var other = Tenant.Create("Other Role Tenant", $"other-role-{Guid.NewGuid():N}"); other.Activate(DateTime.UtcNow);
             context.AddRange(tenant, other); await context.SaveChangesAsync();
             tenantId = tenant.Id; otherTenantId = other.Id; email = $"role-api-{Guid.NewGuid():N}@example.com";
             using var manager = Manager(context);
-            Assert.True((await manager.CreateAsync(ApplicationUser.Create("Role", "Admin", email, tenantId, activate: true),
-                "Valid#Pass1")).Succeeded);
+            var user = ApplicationUser.Create("Role", "Admin", email, tenantId, activate: true);
+            Assert.True((await manager.CreateAsync(user, "Valid#Pass1")).Succeeded);
+            Assert.True((await manager.AddToRoleAsync(user, SystemRoleCodes.SchoolAdmin)).Succeeded);
         }
         await using var factory = new ApiFactory(database.ConnectionString);
         using var client = factory.CreateClient();

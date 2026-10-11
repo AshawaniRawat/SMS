@@ -6,16 +6,18 @@ using SchoolERP.Application.Features.Roles;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Shared.Models;
 using SchoolERP.Shared.Results;
+using SchoolERP.Api.Security;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.Api.Controllers.v1;
 
-// TODO(P1-20): replace the authenticated same-tenant gate with explicit role-management permissions.
 [ApiController]
 [Authorize]
 [Route("api/v1/tenants/{tenantId:guid}/roles")]
 public sealed class RolesController(IRoleManagementService roles, ICurrentUser currentUser) : ControllerBase
 {
     [HttpPost]
+    [RequirePermission(PermissionCatalog.Role.Create)]
     public async Task<ActionResult<ApiResponse<RoleDto>>> Create(Guid tenantId, CreateTenantRoleRequest request,
         CancellationToken ct)
     {
@@ -27,6 +29,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpGet]
+    [RequirePermission(PermissionCatalog.Role.View)]
     public async Task<ActionResult<ApiResponse<PagedResult<RoleDto>>>> List(Guid tenantId,
         [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20, [FromQuery] RoleStatus? status = null,
         [FromQuery] RoleType? type = null, [FromQuery] bool? isSystemRole = null, [FromQuery] string? search = null,
@@ -40,6 +43,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpGet("{roleId:guid}")]
+    [RequirePermission(PermissionCatalog.Role.View)]
     public async Task<ActionResult<ApiResponse<RoleDto>>> Get(Guid tenantId, Guid roleId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -48,6 +52,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpPut("{roleId:guid}")]
+    [RequirePermission(PermissionCatalog.Role.Edit)]
     public async Task<ActionResult<ApiResponse<RoleDto>>> Update(Guid tenantId, Guid roleId, UpdateRoleRequest request,
         CancellationToken ct)
     {
@@ -56,6 +61,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpPost("{roleId:guid}/activate")]
+    [RequirePermission(PermissionCatalog.Role.Activate)]
     public async Task<ActionResult<ApiResponse<RoleDto>>> Activate(Guid tenantId, Guid roleId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -63,6 +69,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpPost("{roleId:guid}/deactivate")]
+    [RequirePermission(PermissionCatalog.Role.Deactivate)]
     public async Task<ActionResult<ApiResponse<RoleDto>>> Deactivate(Guid tenantId, Guid roleId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -70,6 +77,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpPost("{roleId:guid}/archive")]
+    [RequirePermission(PermissionCatalog.Role.Archive)]
     public async Task<ActionResult<ApiResponse<RoleDto>>> Archive(Guid tenantId, Guid roleId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -77,6 +85,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpPost("{roleId:guid}/users/{userId:guid}")]
+    [RequirePermission(PermissionCatalog.User.AssignRole)]
     public async Task<IActionResult> Assign(Guid tenantId, Guid roleId, Guid userId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -85,6 +94,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpDelete("{roleId:guid}/users/{userId:guid}")]
+    [RequirePermission(PermissionCatalog.User.AssignRole)]
     public async Task<IActionResult> Remove(Guid tenantId, Guid roleId, Guid userId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -93,6 +103,7 @@ public sealed class RolesController(IRoleManagementService roles, ICurrentUser c
     }
 
     [HttpGet("users/{userId:guid}")]
+    [RequirePermission(PermissionCatalog.Role.View)]
     public async Task<ActionResult<ApiResponse<IReadOnlyCollection<RoleDto>>>> UserRoles(Guid tenantId, Guid userId,
         CancellationToken ct)
     {

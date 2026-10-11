@@ -13,7 +13,7 @@ public sealed class TenantApiTests(PostgresFixture database)
     [PostgresFact]
     public async Task TenantApiSupportsCreationLookupListingAndLifecycle()
     {
-        await using var factory = new ApiFactory(database.ConnectionString);
+        await using var factory = new ApiFactory(database.ConnectionString, tenantId: Guid.NewGuid());
         using var client = factory.CreateClient();
         var slug = "api-" + Guid.NewGuid().ToString("N");
         var request = new CreateTenantRequest("API Tenant", slug, "OWNER@EXAMPLE.COM", "+1 555", "us", "UTC", "usd");
@@ -39,7 +39,7 @@ public sealed class TenantApiTests(PostgresFixture database)
     [PostgresFact]
     public async Task TenantApiReturnsSafeValidationErrors()
     {
-        await using var factory = new ApiFactory(database.ConnectionString);
+        await using var factory = new ApiFactory(database.ConnectionString, tenantId: Guid.NewGuid());
         using var client = factory.CreateClient();
         var response = await client.PostAsJsonAsync("/api/v1/tenants", new CreateTenantRequest("", "admin"));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);

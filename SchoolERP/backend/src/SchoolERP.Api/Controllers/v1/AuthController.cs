@@ -16,7 +16,7 @@ public sealed class AuthController(IAuthenticationService authenticationService,
     ISessionService sessionService, IPasswordRecoveryService passwordRecoveryService,
     IEmailVerificationService emailVerificationService,
     IValidator<ForgotPasswordRequest> forgotPasswordValidator, IClientRequestContext clientRequest,
-    ICurrentUser currentUser) : ControllerBase
+    ICurrentUser currentUser, IUserPermissionService userPermissions) : ControllerBase
 {
     /// <summary>Validates email, password, lockout, account, and organization eligibility. No token is issued in P1-11.</summary>
     [HttpPost("login")]
@@ -178,4 +178,12 @@ public sealed class AuthController(IAuthenticationService authenticationService,
     [Authorize]
     public ActionResult<ApiResponse<CurrentUserDto>> Me() => Ok(ApiResponse<CurrentUserDto>.Ok(
         new(currentUser.UserId, currentUser.Email, currentUser.TenantId, currentUser.SchoolId, currentUser.CampusId, currentUser.Roles)));
+
+    [HttpGet("me/permissions")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<IReadOnlyCollection<string>>>> MyPermissions(CancellationToken ct)
+    {
+        var permissions = await userPermissions.GetEffectivePermissionCodesAsync(currentUser.UserId!.Value, ct);
+        return Ok(ApiResponse<IReadOnlyCollection<string>>.Ok(permissions.Order(StringComparer.Ordinal).ToArray()));
+    }
 }

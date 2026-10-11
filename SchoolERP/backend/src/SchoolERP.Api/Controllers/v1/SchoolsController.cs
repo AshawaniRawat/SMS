@@ -3,13 +3,15 @@ using SchoolERP.Application.Common.Pagination;
 using SchoolERP.Application.Features.Schools;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Shared.Models;
+using SchoolERP.Api.Security;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.Api.Controllers.v1;
 
-// TODO(P1-auth): Require the future tenant SchoolAdmin authorization policy.
 public sealed class SchoolsController(ISchoolService schoolService) : ApiControllerBase
 {
     [HttpPost]
+    [RequirePermission(PermissionCatalog.School.Create)]
     public async Task<ActionResult<ApiResponse<SchoolDto>>> Create(CreateSchoolRequest request, CancellationToken cancellationToken)
     {
         var school = await schoolService.CreateAsync(request, cancellationToken);
@@ -17,6 +19,7 @@ public sealed class SchoolsController(ISchoolService schoolService) : ApiControl
     }
 
     [HttpGet]
+    [RequirePermission(PermissionCatalog.School.View)]
     public async Task<ActionResult<ApiResponse<PagedResult<SchoolDto>>>> List(
         [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20,
         [FromQuery] string? search = null, [FromQuery] SchoolStatus? status = null,
@@ -27,6 +30,7 @@ public sealed class SchoolsController(ISchoolService schoolService) : ApiControl
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission(PermissionCatalog.School.View)]
     public async Task<ActionResult<ApiResponse<SchoolDto>>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var school = await schoolService.GetByIdAsync(id, cancellationToken);
@@ -34,6 +38,7 @@ public sealed class SchoolsController(ISchoolService schoolService) : ApiControl
     }
 
     [HttpGet("by-code/{code}")]
+    [RequirePermission(PermissionCatalog.School.View)]
     public async Task<ActionResult<ApiResponse<SchoolDto>>> GetByCode(string code, CancellationToken cancellationToken)
     {
         var school = await schoolService.GetByCodeAsync(code, cancellationToken);
@@ -41,6 +46,7 @@ public sealed class SchoolsController(ISchoolService schoolService) : ApiControl
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission(PermissionCatalog.School.Edit)]
     public async Task<ActionResult<ApiResponse<SchoolDto>>> UpdateProfile(Guid id, SchoolProfileRequest request,
         CancellationToken cancellationToken)
     {
@@ -49,18 +55,22 @@ public sealed class SchoolsController(ISchoolService schoolService) : ApiControl
     }
 
     [HttpPost("{id:guid}/activate")]
+    [RequirePermission(PermissionCatalog.School.Activate)]
     public Task<ActionResult<ApiResponse<SchoolDto>>> Activate(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => schoolService.ActivateAsync(id, cancellationToken));
 
     [HttpPost("{id:guid}/suspend")]
+    [RequirePermission(PermissionCatalog.School.Suspend)]
     public Task<ActionResult<ApiResponse<SchoolDto>>> Suspend(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => schoolService.SuspendAsync(id, cancellationToken));
 
     [HttpPost("{id:guid}/reactivate")]
+    [RequirePermission(PermissionCatalog.School.Activate)]
     public Task<ActionResult<ApiResponse<SchoolDto>>> Reactivate(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => schoolService.ReactivateAsync(id, cancellationToken));
 
     [HttpPost("{id:guid}/archive")]
+    [RequirePermission(PermissionCatalog.School.Archive)]
     public Task<ActionResult<ApiResponse<SchoolDto>>> Archive(Guid id, CancellationToken cancellationToken) =>
         ChangeStatus(() => schoolService.ArchiveAsync(id, cancellationToken));
 

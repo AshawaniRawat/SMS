@@ -4,16 +4,18 @@ using SchoolERP.Application.Abstractions;
 using SchoolERP.Application.Features.RolePermissions;
 using SchoolERP.Shared.Models;
 using SchoolERP.Shared.Results;
+using SchoolERP.Api.Security;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.Api.Controllers.v1;
 
-// TODO(P1-20): replace the authenticated same-tenant gate with explicit role-permission policies.
 [ApiController]
 [Authorize]
 [Route("api/v1/tenants/{tenantId:guid}/roles/{roleId:guid}/permissions")]
 public sealed class RolePermissionsController(IRolePermissionService service, ICurrentUser currentUser) : ControllerBase
 {
     [HttpGet]
+    [RequirePermission(PermissionCatalog.Role.View)]
     public async Task<ActionResult<ApiResponse<RoleWithPermissionsDto>>> Get(Guid tenantId, Guid roleId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -22,6 +24,7 @@ public sealed class RolePermissionsController(IRolePermissionService service, IC
     }
 
     [HttpPost("{permissionId:guid}")]
+    [RequirePermission(PermissionCatalog.Role.ManagePermissions)]
     public async Task<IActionResult> Assign(Guid tenantId, Guid roleId, Guid permissionId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -29,6 +32,7 @@ public sealed class RolePermissionsController(IRolePermissionService service, IC
     }
 
     [HttpDelete("{permissionId:guid}")]
+    [RequirePermission(PermissionCatalog.Role.ManagePermissions)]
     public async Task<IActionResult> Remove(Guid tenantId, Guid roleId, Guid permissionId, CancellationToken ct)
     {
         if (!OwnTenant(tenantId)) return NotFound();
@@ -36,6 +40,7 @@ public sealed class RolePermissionsController(IRolePermissionService service, IC
     }
 
     [HttpPut]
+    [RequirePermission(PermissionCatalog.Role.ManagePermissions)]
     public async Task<ActionResult<ApiResponse<RoleWithPermissionsDto>>> Set(Guid tenantId, Guid roleId,
         SetRolePermissionsRequest request, CancellationToken ct)
     {

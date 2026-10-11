@@ -93,6 +93,7 @@ public static class DependencyInjection
         services.AddScoped<IPermissionCatalogService, PermissionCatalogService>();
         services.AddSingleton<IRolePermissionCompatibilityService, RolePermissionCompatibilityService>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();
+        services.AddScoped<IUserPermissionService, UserPermissionService>();
         services.Configure<EmailDeliverySettings>(configuration.GetSection(EmailDeliverySettings.SectionName));
         services.AddOptions<DataProtectionTokenProviderOptions>()
             .Configure<IOptions<PasswordResetOptions>>((tokenOptions, passwordReset) =>

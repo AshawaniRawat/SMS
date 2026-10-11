@@ -9,6 +9,9 @@ using Microsoft.OpenApi;
 using SchoolERP.Application.Security;
 using Microsoft.Extensions.Options;
 using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
+using SchoolERP.Api.Security;
 namespace SchoolERP.Api.Extensions;
 public static class DependencyInjection
 {
@@ -135,6 +138,9 @@ public static class DependencyInjection
             };
         });
         services.AddAuthorization();
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+        services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, ApiAuthorizationResultHandler>();
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
         services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));

@@ -38,7 +38,7 @@ Permission Catalog
 
 ## Read API
 
-All endpoints require an authenticated user while explicit permission policies are deferred to P1-20.
+All endpoints require the `Permission.View` policy introduced in P1-20.
 
 - `GET /api/v1/permissions` supports pagination and `module`, `scope`, `isActive`, and `search` filters. Search covers code, name, and description.
 - `GET /api/v1/permissions/by-code?code=Fee.Refund` performs an exact code lookup.
@@ -48,7 +48,7 @@ There are no POST, PUT, PATCH, or DELETE permission endpoints.
 
 ## Deferred authorization work
 
-P1-19 will add mappings without changing permission identity:
+P1-19 added mappings without changing permission identity:
 
 ```text
 Role
@@ -56,7 +56,7 @@ Role
   +-- many Permissions
 ```
 
-P1-20 will calculate and enforce permissions:
+P1-20 calculates and enforces permissions:
 
 ```text
 Authenticated User
@@ -68,4 +68,4 @@ Authenticated User
               +-- Authorization Policy
 ```
 
-P1-18 does not create role mappings, permission claims, dynamic policy providers, permission attributes, or UI visibility rules.
+Permissions remain absent from JWTs, and frontend visibility remains a UX concern rather than an authorization boundary.

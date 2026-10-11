@@ -15,7 +15,8 @@ public static partial class PermissionCatalog
     public static class Campus { public const string View = "Campus.View", Create = "Campus.Create", Edit = "Campus.Edit", Activate = "Campus.Activate", Suspend = "Campus.Suspend", Archive = "Campus.Archive", SetMain = "Campus.SetMain"; }
     public static class AcademicYear { public const string View = "AcademicYear.View", Create = "AcademicYear.Create", Edit = "AcademicYear.Edit", Activate = "AcademicYear.Activate", SetCurrent = "AcademicYear.SetCurrent", Close = "AcademicYear.Close", Archive = "AcademicYear.Archive", ManageAdmissions = "AcademicYear.ManageAdmissions"; }
     public static class User { public const string View = "User.View", Create = "User.Create", Edit = "User.Edit", Activate = "User.Activate", Suspend = "User.Suspend", Deactivate = "User.Deactivate", AssignRole = "User.AssignRole"; }
-    public static class Role { public const string View = "Role.View", Create = "Role.Create", Edit = "Role.Edit", Activate = "Role.Activate", Deactivate = "Role.Deactivate", Archive = "Role.Archive", AssignUser = "Role.AssignUser"; }
+    public static class Role { public const string View = "Role.View", Create = "Role.Create", Edit = "Role.Edit", Activate = "Role.Activate", Deactivate = "Role.Deactivate", Archive = "Role.Archive", AssignUser = "Role.AssignUser", ManagePermissions = "Role.ManagePermissions"; }
+    public static class Permission { public const string View = "Permission.View"; }
     public static class Student { public const string View = "Student.View", Create = "Student.Create", Edit = "Student.Edit", Archive = "Student.Archive", Promote = "Student.Promote", Export = "Student.Export"; }
     public static class Admission { public const string View = "Admission.View", Create = "Admission.Create", Edit = "Admission.Edit", Approve = "Admission.Approve", Reject = "Admission.Reject", ConvertToStudent = "Admission.ConvertToStudent"; }
     public static class Attendance { public const string View = "Attendance.View", Mark = "Attendance.Mark", Edit = "Attendance.Edit", Export = "Attendance.Export", Approve = "Attendance.Approve"; }
@@ -86,6 +87,8 @@ public static partial class PermissionCatalog
         Add(rows, PermissionScope.School, Communication.View, Communication.Send, Communication.Broadcast, Communication.ManageTemplate);
         Add(rows, PermissionScope.School, Report.View, Report.Export);
         Add(rows, PermissionScope.Tenant, Audit.View, Audit.Export);
+        // Appended to preserve deterministic IDs of the P1-18 catalog.
+        Add(rows, PermissionScope.School, Role.ManagePermissions, Permission.View);
         return rows.AsReadOnly();
     }
 

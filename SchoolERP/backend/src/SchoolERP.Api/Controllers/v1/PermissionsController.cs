@@ -4,11 +4,12 @@ using SchoolERP.Application.Common.Pagination;
 using SchoolERP.Application.Features.Permissions;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Shared.Models;
+using SchoolERP.Api.Security;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.Api.Controllers.v1;
 
-// TODO(P1-20): require an explicit permission-catalog view policy.
-[Authorize]
+[RequirePermission(PermissionCatalog.Permission.View)]
 public sealed class PermissionsController(IPermissionCatalogService permissions) : ApiControllerBase
 {
     [HttpGet]

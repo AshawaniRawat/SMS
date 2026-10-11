@@ -1,6 +1,6 @@
 # Permission inventory
 
-The P1-18 catalog contains 127 system-managed permissions. This inventory is grouped by its singular, case-sensitive module identifier.
+The catalog contains 129 system-managed permissions. This inventory is grouped by its singular, case-sensitive module identifier.
 
 ## Platform
 `Platform.ViewDashboard`, `Platform.ManageTenants`, `Platform.ViewAudit`, `Platform.ManageSettings`
@@ -21,7 +21,10 @@ The P1-18 catalog contains 127 system-managed permissions. This inventory is gro
 `User.View`, `User.Create`, `User.Edit`, `User.Activate`, `User.Suspend`, `User.Deactivate`, `User.AssignRole`
 
 ## Role
-`Role.View`, `Role.Create`, `Role.Edit`, `Role.Activate`, `Role.Deactivate`, `Role.Archive`, `Role.AssignUser`
+`Role.View`, `Role.Create`, `Role.Edit`, `Role.Activate`, `Role.Deactivate`, `Role.Archive`, `Role.AssignUser`, `Role.ManagePermissions`
+
+## Permission
+`Permission.View`
 
 ## Student
 `Student.View`, `Student.Create`, `Student.Edit`, `Student.Archive`, `Student.Promote`, `Student.Export`

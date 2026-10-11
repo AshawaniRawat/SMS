@@ -9,11 +9,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SchoolERP.Application.Abstractions;
 using Npgsql;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Text.Encodings.Web;
+using System.Security.Claims;
+using SchoolERP.Application.Security;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.IntegrationTests;
 
 public sealed class ApiFactory(string? connectionString = null, string environment = "Development", bool initializeDatabase = false,
-    Guid? tenantId = null, Action<IServiceCollection>? configureServices = null) : WebApplicationFactory<Program>
+    Guid? tenantId = null, Action<IServiceCollection>? configureServices = null, bool authorizePlatform = false) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -25,6 +32,18 @@ public sealed class ApiFactory(string? connectionString = null, string environme
             {
                 services.RemoveAll<ICurrentTenant>();
                 services.AddScoped<ICurrentTenant>(_ => new TestCurrentTenant(tenantId));
+            }
+            if (tenantId.HasValue || authorizePlatform)
+            {
+                services.Configure<AuthenticationOptions>(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestAuthenticationHandler.SchemeName;
+                    options.DefaultChallengeScheme = TestAuthenticationHandler.SchemeName;
+                });
+                services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(
+                    TestAuthenticationHandler.SchemeName, _ => { });
+                services.RemoveAll<IUserPermissionService>();
+                services.AddScoped<IUserPermissionService>(_ => new AllPermissionsTestService());
             }
             configureServices?.Invoke(services);
         });
@@ -39,6 +58,28 @@ public sealed class ApiFactory(string? connectionString = null, string environme
             ["Jwt:AccessTokenLifetimeMinutes"] = "15",
             ["Jwt:ClockSkewSeconds"] = "0"
         }));
+    }
+}
+
+internal sealed class AllPermissionsTestService : IUserPermissionService
+{
+    private static readonly IReadOnlySet<string> Codes = new HashSet<string>(
+        PermissionCatalog.All.Select(x => x.Code), StringComparer.Ordinal);
+    public Task<IReadOnlySet<string>> GetEffectivePermissionCodesAsync(Guid userId, CancellationToken cancellationToken = default) => Task.FromResult(Codes);
+    public Task<bool> HasPermissionAsync(Guid userId, string permissionCode, CancellationToken cancellationToken = default) => Task.FromResult(Codes.Contains(permissionCode));
+}
+
+internal sealed class TestAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
+    ILoggerFactory logger, UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+{
+    public const string SchemeName = "IntegrationTest";
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var tenantId = Context.RequestServices.GetRequiredService<ICurrentTenant>().TenantId;
+        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, Guid.Parse("11111111-1111-1111-1111-111111111111").ToString()) };
+        if (tenantId.HasValue) claims.Add(new(SchoolERP.Application.Security.CustomClaimTypes.TenantId, tenantId.Value.ToString()));
+        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(
+            new ClaimsPrincipal(new ClaimsIdentity(claims, SchemeName)), SchemeName)));
     }
 }
 

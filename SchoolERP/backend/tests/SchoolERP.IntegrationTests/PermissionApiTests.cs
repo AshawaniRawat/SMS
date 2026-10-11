@@ -25,12 +25,14 @@ public sealed class PermissionApiTests(PostgresFixture database)
         await using (var context = database.CreateContext(platformAccess: true))
         {
             await new PermissionSeeder(context).SeedAsync();
+            await new RolePermissionSeeder(context).SeedAsync();
             var tenant = Tenant.Create("Permission API Tenant", $"permission-api-{Guid.NewGuid():N}");
             tenant.Activate(DateTime.UtcNow); context.Tenants.Add(tenant); await context.SaveChangesAsync();
             email = $"permission-api-{Guid.NewGuid():N}@example.com";
             using var manager = Manager(context);
-            Assert.True((await manager.CreateAsync(ApplicationUser.Create("Permission", "Reader", email, tenant.Id,
-                activate: true), "Valid#Pass1")).Succeeded);
+            var user = ApplicationUser.Create("Permission", "Reader", email, tenant.Id, activate: true);
+            Assert.True((await manager.CreateAsync(user, "Valid#Pass1")).Succeeded);
+            Assert.True((await manager.AddToRoleAsync(user, SystemRoleCodes.SchoolAdmin)).Succeeded);
         }
 
         await using var factory = new ApiFactory(database.ConnectionString);

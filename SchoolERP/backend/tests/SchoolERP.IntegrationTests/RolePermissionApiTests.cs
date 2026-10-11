@@ -37,7 +37,9 @@ public sealed class RolePermissionApiTests(PostgresFixture database)
             systemRoleId = context.Roles.Single(x => x.Code == SystemRoleCodes.SchoolAdmin).Id;
             email = $"rp-api-{Guid.NewGuid():N}@example.com";
             using var manager = Manager(context);
-            Assert.True((await manager.CreateAsync(ApplicationUser.Create("Role", "Editor", email, tenant.Id, activate: true), "Valid#Pass1")).Succeeded);
+            var user = ApplicationUser.Create("Role", "Editor", email, tenant.Id, activate: true);
+            Assert.True((await manager.CreateAsync(user, "Valid#Pass1")).Succeeded);
+            Assert.True((await manager.AddToRoleAsync(user, SystemRoleCodes.SchoolAdmin)).Succeeded);
         }
         await using var factory = new ApiFactory(database.ConnectionString); using var client = factory.CreateClient();
         Assert.Equal(HttpStatusCode.Unauthorized,
