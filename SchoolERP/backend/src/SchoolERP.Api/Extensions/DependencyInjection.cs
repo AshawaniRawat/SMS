@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using SchoolERP.Application.Security;
 using Microsoft.Extensions.Options;
+using System.Reflection;
 namespace SchoolERP.Api.Extensions;
 public static class DependencyInjection
 {
@@ -17,6 +18,15 @@ public static class DependencyInjection
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "SchoolERP API",
+                Version = "v1",
+                Description = "Backend API for SchoolERP. Use the login endpoint to obtain a JWT, then select Authorize and enter the token."
+            });
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT",
@@ -61,6 +71,18 @@ public static class DependencyInjection
                 {
                     PermitLimit = 10, Window = TimeSpan.FromMinutes(15), QueueLimit = 0, AutoReplenishment = true
                 }));
+            options.AddPolicy("resend-email-verification", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5, Window = TimeSpan.FromMinutes(15), QueueLimit = 0, AutoReplenishment = true
+                }));
+            options.AddPolicy("confirm-email", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 20, Window = TimeSpan.FromMinutes(15), QueueLimit = 0, AutoReplenishment = true
+                }));
         });
         services.AddExceptionHandler<PersistenceExceptionHandler>();
         services.AddExceptionHandler<DatabaseExceptionHandler>();
@@ -88,6 +110,9 @@ public static class DependencyInjection
             .Validate(x => Uri.TryCreate(x.BaseUrl, UriKind.Absolute, out var uri) &&
                 uri.Scheme is "http" or "https", "Frontend:BaseUrl must be an absolute HTTP(S) URL.")
             .ValidateOnStart();
+        services.AddOptions<EmailVerificationOptions>()
+            .Bind(configuration.GetSection(EmailVerificationOptions.SectionName))
+            .ValidateDataAnnotations().ValidateOnStart();
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

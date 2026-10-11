@@ -10,4 +10,5 @@ public sealed class IdentitySettings
     public int DefaultLockoutMinutes { get; set; } = 15;
     public bool ActivateNewUsersImmediately { get; set; }
     public bool AutoConfirmAdminCreatedUsers { get; set; }
+    public bool ActivateUserAfterEmailConfirmation { get; set; }
 }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Npgsql;
 using SchoolERP.Application.Common.Pagination;
 using SchoolERP.Application.Features.Identity;
+using SchoolERP.Application.Features.Authentication;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Infrastructure.Persistence.Context;
 using SchoolERP.Shared.Results;
@@ -14,7 +15,8 @@ namespace SchoolERP.Infrastructure.Identity;
 
 public sealed class UserIdentityService(UserManager<ApplicationUser> userManager, SchoolErpDbContext context,
     IValidator<CreatePlatformUserRequest> platformValidator, IValidator<CreateTenantUserRequest> tenantValidator,
-    IOptions<IdentitySettings> settings, TimeProvider timeProvider, ILogger<UserIdentityService> logger) : IUserIdentityService
+    IOptions<IdentitySettings> settings, IEmailVerificationService emailVerificationService,
+    TimeProvider timeProvider, ILogger<UserIdentityService> logger) : IUserIdentityService
 {
     public async Task<Result<UserSummaryDto>> CreatePlatformUserAsync(CreatePlatformUserRequest request, CancellationToken ct = default)
     {
@@ -60,6 +62,8 @@ public sealed class UserIdentityService(UserManager<ApplicationUser> userManager
         }
         logger.LogInformation("Identity user {UserId} created with TenantId {TenantId}, SchoolId {SchoolId}, CampusId {CampusId}",
             user.Id, user.TenantId, user.SchoolId, user.CampusId);
+        if (!user.EmailConfirmed)
+            await emailVerificationService.SendVerificationAsync(user.Id, cancellationToken: ct);
         return Result<UserSummaryDto>.Ok(Map(user));
     }
 

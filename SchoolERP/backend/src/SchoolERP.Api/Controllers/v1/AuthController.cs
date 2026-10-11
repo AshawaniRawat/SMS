@@ -14,6 +14,7 @@ namespace SchoolERP.Api.Controllers.v1;
 [Route("api/v1/auth")]
 public sealed class AuthController(IAuthenticationService authenticationService, IRefreshTokenService refreshTokenService,
     ISessionService sessionService, IPasswordRecoveryService passwordRecoveryService,
+    IEmailVerificationService emailVerificationService,
     IValidator<ForgotPasswordRequest> forgotPasswordValidator, IClientRequestContext clientRequest,
     ICurrentUser currentUser) : ControllerBase
 {
@@ -95,6 +96,34 @@ public sealed class AuthController(IAuthenticationService authenticationService,
         return result.ErrorCode == PasswordRecoveryErrorCodes.SessionRevocationFailed
             ? StatusCode(StatusCodes.Status500InternalServerError, body)
             : BadRequest(body);
+    }
+
+    /// <summary>Confirms ownership of the registered email using an Identity confirmation token.</summary>
+    [HttpPost("confirm-email")]
+    [AllowAnonymous]
+    [EnableRateLimiting("confirm-email")]
+    public async Task<ActionResult<ApiResponse<bool>>> ConfirmEmail(ConfirmEmailRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await emailVerificationService.ConfirmEmailAsync(request, clientRequest.IpAddress, cancellationToken);
+        return result.IsSuccess
+            ? Ok(ApiResponse<bool>.Ok(true, EmailVerificationMessages.Confirmed))
+            : BadRequest(ApiResponse<bool>.Fail([EmailVerificationMessages.InvalidOrExpired], result.ErrorCode));
+    }
+
+    /// <summary>Requests verification without disclosing account or confirmation state.</summary>
+    [HttpPost("resend-email-verification")]
+    [AllowAnonymous]
+    [EnableRateLimiting("resend-email-verification")]
+    public async Task<ActionResult<ApiResponse<bool>>> ResendEmailVerification(
+        ResendEmailVerificationRequest request, IValidator<ResendEmailVerificationRequest> validator,
+        CancellationToken cancellationToken)
+    {
+        var validation = await validator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+            return BadRequest(ApiResponse<bool>.Fail(validation.Errors.Select(x => x.ErrorMessage)));
+        await emailVerificationService.RequestResendAsync(request.Email, clientRequest.IpAddress, cancellationToken);
+        return Accepted(ApiResponse<bool>.Ok(true, EmailVerificationMessages.ResendAccepted));
     }
 
     /// <summary>Revokes the complete refresh-token chain identified by the supplied token. Safe to repeat.</summary>

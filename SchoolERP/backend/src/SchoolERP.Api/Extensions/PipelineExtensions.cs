@@ -7,7 +7,17 @@ public static class PipelineExtensions
     {
         app.UseSerilogRequestLogging();
         app.UseExceptionHandler();
-        if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "SchoolERP API v1");
+                options.DocumentTitle = "SchoolERP API Documentation";
+                options.DisplayRequestDuration();
+                options.EnablePersistAuthorization();
+            });
+        }
         else { app.UseHsts(); app.UseHttpsRedirection(); }
         app.UseCors("Frontend");
         app.UseRateLimiter();

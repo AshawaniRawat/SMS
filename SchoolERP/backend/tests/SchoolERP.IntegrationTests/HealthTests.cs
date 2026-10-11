@@ -59,7 +59,12 @@ public sealed class HealthTests(PostgresFixture database)
     {
         await using var factory = new ApiFactory();
         using var client = factory.CreateClient();
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/swagger/v1/swagger.json")).StatusCode);
+        var document = await client.GetAsync("/swagger/v1/swagger.json");
+        Assert.Equal(HttpStatusCode.OK, document.StatusCode);
+        var json = await document.Content.ReadAsStringAsync();
+        Assert.Contains("SchoolERP API", json);
+        Assert.Contains("Bearer", json);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/swagger/index.html")).StatusCode);
     }
 
     [Fact] public async Task HealthReturnsSafe503WhenDatabaseIsUnavailable()

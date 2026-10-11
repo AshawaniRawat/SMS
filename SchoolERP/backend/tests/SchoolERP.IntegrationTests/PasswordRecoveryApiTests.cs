@@ -159,6 +159,8 @@ public sealed class PasswordRecoveryApiTests(PostgresFixture database)
         {
             Messages.Add((email, resetLink)); return Task.CompletedTask;
         }
+        public Task SendEmailVerificationAsync(string email, string verificationLink,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private sealed record LoginTokens(string RefreshToken);

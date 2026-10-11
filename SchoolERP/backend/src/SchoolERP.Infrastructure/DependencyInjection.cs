@@ -71,7 +71,9 @@ public static class DependencyInjection
             options.Lockout.MaxFailedAccessAttempts = identitySettings.MaxFailedAccessAttempts;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(identitySettings.DefaultLockoutMinutes);
             options.SignIn.RequireConfirmedEmail = identitySettings.RequireConfirmedEmail;
-        }).AddRoles<ApplicationRole>().AddEntityFrameworkStores<SchoolErpDbContext>().AddDefaultTokenProviders();
+            options.Tokens.EmailConfirmationTokenProvider = "EmailConfirmation";
+        }).AddRoles<ApplicationRole>().AddEntityFrameworkStores<SchoolErpDbContext>().AddDefaultTokenProviders()
+            .AddTokenProvider<EmailConfirmationTokenProvider<ApplicationUser>>("EmailConfirmation");
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddSingleton<IAccessTokenService, JwtAccessTokenService>();
@@ -81,10 +83,14 @@ public static class DependencyInjection
         services.AddSingleton<IIdentityTokenEncoder, IdentityTokenEncoder>();
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+        services.AddScoped<IEmailVerificationService, EmailVerificationService>();
         services.Configure<EmailDeliverySettings>(configuration.GetSection(EmailDeliverySettings.SectionName));
         services.AddOptions<DataProtectionTokenProviderOptions>()
             .Configure<IOptions<PasswordResetOptions>>((tokenOptions, passwordReset) =>
                 tokenOptions.TokenLifespan = TimeSpan.FromMinutes(passwordReset.Value.TokenLifespanMinutes));
+        services.AddOptions<EmailConfirmationTokenProviderOptions>()
+            .Configure<IOptions<EmailVerificationOptions>>((tokenOptions, verification) =>
+                tokenOptions.TokenLifespan = TimeSpan.FromHours(verification.Value.TokenLifespanHours));
         services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

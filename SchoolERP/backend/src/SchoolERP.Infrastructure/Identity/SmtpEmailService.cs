@@ -27,4 +27,28 @@ public sealed class SmtpEmailService(IOptions<EmailDeliverySettings> options) : 
             smtp.Credentials = new NetworkCredential(settings.Username, settings.Password);
         await smtp.SendMailAsync(message, cancellationToken);
     }
+
+    public Task SendEmailVerificationAsync(string email, string verificationLink,
+        CancellationToken cancellationToken = default) => SendAsync(email, "Verify your SchoolERP email address",
+        "Please verify the email address for your SchoolERP account.", verificationLink,
+        "This link expires in 24 hours. If you did not create this account, you can ignore this email.",
+        cancellationToken);
+
+    private async Task SendAsync(string email, string subject, string purpose, string link, string note,
+        CancellationToken cancellationToken)
+    {
+        var settings = options.Value;
+        if (string.IsNullOrWhiteSpace(settings.Host) || string.IsNullOrWhiteSpace(settings.From))
+            throw new InvalidOperationException("Email delivery is not configured.");
+        using var message = new MailMessage(settings.From, email)
+        {
+            Subject = subject,
+            Body = $"{purpose}\n\nOpen this link:\n{link}\n\n{note}",
+            IsBodyHtml = false
+        };
+        using var smtp = new SmtpClient(settings.Host, settings.Port) { EnableSsl = settings.EnableSsl };
+        if (!string.IsNullOrWhiteSpace(settings.Username))
+            smtp.Credentials = new NetworkCredential(settings.Username, settings.Password);
+        await smtp.SendMailAsync(message, cancellationToken);
+    }
 }

@@ -15,6 +15,7 @@ public interface IPasswordRecoveryService
 public interface IEmailService
 {
     Task SendPasswordResetEmailAsync(string email, string resetLink, CancellationToken cancellationToken = default);
+    Task SendEmailVerificationAsync(string email, string verificationLink, CancellationToken cancellationToken = default);
 }
 
 public interface IIdentityTokenEncoder

@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SchoolERP.Application.Features.Identity;
+using SchoolERP.Application.Features.Authentication;
+using SchoolERP.Shared.Results;
 using SchoolERP.Domain.Entities;
 using SchoolERP.Infrastructure.Identity;
 using SchoolERP.Infrastructure.Persistence.Context;
@@ -73,7 +75,7 @@ public sealed class IdentityPersistenceTests(PostgresFixture fixture)
         context.AddRange(tenantA, tenantB, schoolA, schoolB, campusA); await context.SaveChangesAsync();
         using var manager = CreateManager(context);
         var service = new UserIdentityService(manager, context, new CreatePlatformUserRequestValidator(),
-            new CreateTenantUserRequestValidator(), Options.Create(new IdentitySettings()), TimeProvider.System,
+            new CreateTenantUserRequestValidator(), Options.Create(new IdentitySettings()), new NoOpVerificationService(), TimeProvider.System,
             NullLogger<UserIdentityService>.Instance);
         var valid = await service.CreateTenantUserAsync(new(tenantA.Id, "Valid", "Tenant", $"{Guid.NewGuid():N}@example.com", "Valid#Pass1", schoolA.Id, campusA.Id));
         Assert.True(valid.IsSuccess, valid.Error);
@@ -97,5 +99,15 @@ public sealed class IdentityPersistenceTests(PostgresFixture fixture)
         return new UserManager<ApplicationUser>(store, options, new PasswordHasher<ApplicationUser>(),
             [new UserValidator<ApplicationUser>()], [new PasswordValidator<ApplicationUser>()],
             new UpperInvariantLookupNormalizer(), new IdentityErrorDescriber(), null!, NullLogger<UserManager<ApplicationUser>>.Instance);
+    }
+
+    private sealed class NoOpVerificationService : IEmailVerificationService
+    {
+        public Task<Result<bool>> SendVerificationAsync(Guid userId, string? ipAddress = null,
+            CancellationToken cancellationToken = default) => Task.FromResult(Result<bool>.Ok(true));
+        public Task<Result<bool>> ConfirmEmailAsync(ConfirmEmailRequest request, string? ipAddress = null,
+            CancellationToken cancellationToken = default) => Task.FromResult(Result<bool>.Ok(true));
+        public Task RequestResendAsync(string email, string? ipAddress = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

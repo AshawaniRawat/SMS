@@ -10,6 +10,7 @@ See [architecture](docs/architecture.md) for dependencies and tenant-isolation r
 
 Authentication includes rotating refresh-token sessions and self-service logout/session revocation. See [logout and sessions](docs/security/logout-and-sessions.md) for the API flow and the stateless access-token limitation.
 Password recovery uses short-lived ASP.NET Identity tokens, enumeration-safe responses, and session revocation. See [password recovery](docs/security/password-recovery.md).
+Email ownership confirmation uses a separate 24-hour Identity token provider and enumeration-safe resend flow. See [email verification](docs/security/email-verification.md).
 
 ## Folder structure
 
@@ -54,7 +55,7 @@ dotnet ef database update --project src/SchoolERP.Infrastructure --startup-proje
 dotnet run --project src/SchoolERP.Api
 ```
 
-API: http://localhost:5000. Development Swagger: http://localhost:5000/swagger. Health: http://localhost:5000/api/health verifies PostgreSQL connectivity and returns HTTP 200 with {"status":"Healthy"}, or HTTP 503 with {"status":"Unhealthy"}. It does not expose connection details or verify every schema object. Future controllers inherit ApiControllerBase for api/v1/[controller] routes.
+API: http://localhost:5000. Development Swagger UI opens automatically at http://localhost:5000/swagger and includes JWT Bearer authorization through its **Authorize** button. The OpenAPI document is available at http://localhost:5000/swagger/v1/swagger.json. Health: http://localhost:5000/api/health verifies PostgreSQL connectivity and returns HTTP 200 with {"status":"Healthy"}, or HTTP 503 with {"status":"Unhealthy"}. It does not expose connection details or verify every schema object. Future controllers inherit ApiControllerBase for api/v1/[controller] routes.
 
 Development applies migrations at startup by default, using Database:ApplyMigrationsOnStartup=true. SeedDevelopmentData defaults to false. These actions are refused outside Development regardless of flags. Production must deploy migrations separately with controlled permissions. EnsureCreated is never used.
 
