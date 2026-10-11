@@ -20,6 +20,7 @@ public interface ISessionService
 {
     Task<Result<bool>> LogoutSessionAsync(string? refreshToken, CancellationToken cancellationToken = default);
     Task<Result<bool>> LogoutAllAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<Result<bool>> RevokeAllAfterPasswordResetAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<PagedResult<UserSessionDto>> GetSessionsAsync(Guid userId, PagedRequest request, bool activeOnly = true,
         CancellationToken cancellationToken = default);
     Task<Result<bool>> RevokeSessionByIdAsync(Guid userId, string sessionId,
@@ -38,4 +39,5 @@ public static class SessionRevocationReasons
     public const string Logout = "Logout";
     public const string LogoutAllDevices = "LogoutAllDevices";
     public const string UserRevokedSession = "UserRevokedSession";
+    public const string PasswordReset = "PasswordReset";
 }

@@ -49,6 +49,18 @@ public static class DependencyInjection
                     QueueLimit = 0,
                     AutoReplenishment = true
                 }));
+            options.AddPolicy("forgot-password", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5, Window = TimeSpan.FromMinutes(15), QueueLimit = 0, AutoReplenishment = true
+                }));
+            options.AddPolicy("reset-password", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10, Window = TimeSpan.FromMinutes(15), QueueLimit = 0, AutoReplenishment = true
+                }));
         });
         services.AddExceptionHandler<PersistenceExceptionHandler>();
         services.AddExceptionHandler<DatabaseExceptionHandler>();
@@ -68,6 +80,13 @@ public static class DependencyInjection
                 "Refresh-token lifetime must be between 1 and 30 days.")
             .Validate(x => x.RefreshTokenRetentionDays is >= 0 and <= 365,
                 "Refresh-token retention must be between 0 and 365 days.")
+            .ValidateOnStart();
+        services.AddOptions<PasswordResetOptions>().Bind(configuration.GetSection(PasswordResetOptions.SectionName))
+            .ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<FrontendOptions>().Bind(configuration.GetSection(FrontendOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(x => Uri.TryCreate(x.BaseUrl, UriKind.Absolute, out var uri) &&
+                uri.Scheme is "http" or "https", "Frontend:BaseUrl must be an absolute HTTP(S) URL.")
             .ValidateOnStart();
         services.AddAuthentication(options =>
         {

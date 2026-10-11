@@ -13,7 +13,7 @@ using Npgsql;
 namespace SchoolERP.IntegrationTests;
 
 public sealed class ApiFactory(string? connectionString = null, string environment = "Development", bool initializeDatabase = false,
-    Guid? tenantId = null) : WebApplicationFactory<Program>
+    Guid? tenantId = null, Action<IServiceCollection>? configureServices = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -26,6 +26,7 @@ public sealed class ApiFactory(string? connectionString = null, string environme
                 services.RemoveAll<ICurrentTenant>();
                 services.AddScoped<ICurrentTenant>(_ => new TestCurrentTenant(tenantId));
             }
+            configureServices?.Invoke(services);
         });
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {

@@ -78,6 +78,13 @@ public static class DependencyInjection
         services.AddSingleton<IRefreshTokenHasher, RefreshTokenHasher>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ISessionService, UserSessionService>();
+        services.AddSingleton<IIdentityTokenEncoder, IdentityTokenEncoder>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<IPasswordRecoveryService, PasswordRecoveryService>();
+        services.Configure<EmailDeliverySettings>(configuration.GetSection(EmailDeliverySettings.SectionName));
+        services.AddOptions<DataProtectionTokenProviderOptions>()
+            .Configure<IOptions<PasswordResetOptions>>((tokenOptions, passwordReset) =>
+                tokenOptions.TokenLifespan = TimeSpan.FromMinutes(passwordReset.Value.TokenLifespanMinutes));
         services.AddHealthChecks().AddCheck<PostgresHealthCheck>("postgresql", tags: ["ready"]);
         return services;
     }

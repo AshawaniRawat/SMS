@@ -6,13 +6,16 @@ using Microsoft.AspNetCore.Authorization;
 using SchoolERP.Application.Abstractions;
 using SchoolERP.Application.Security;
 using SchoolERP.Application.Common.Pagination;
+using FluentValidation;
 
 namespace SchoolERP.Api.Controllers.v1;
 
 [ApiController]
 [Route("api/v1/auth")]
 public sealed class AuthController(IAuthenticationService authenticationService, IRefreshTokenService refreshTokenService,
-    ISessionService sessionService, ICurrentUser currentUser) : ControllerBase
+    ISessionService sessionService, IPasswordRecoveryService passwordRecoveryService,
+    IValidator<ForgotPasswordRequest> forgotPasswordValidator, IClientRequestContext clientRequest,
+    ICurrentUser currentUser) : ControllerBase
 {
     /// <summary>Validates email, password, lockout, account, and organization eligibility. No token is issued in P1-11.</summary>
     [HttpPost("login")]
@@ -57,6 +60,41 @@ public sealed class AuthController(IAuthenticationService authenticationService,
             RefreshTokenErrorCodes.PersistenceFailure => StatusCode(StatusCodes.Status500InternalServerError, body),
             _ => Unauthorized(body)
         };
+    }
+
+    /// <summary>Accepts a recovery request without revealing whether the email belongs to an account.</summary>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("forgot-password")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiResponse<bool>>> ForgotPassword(ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var validation = await forgotPasswordValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+            return BadRequest(ApiResponse<bool>.Fail(validation.Errors.Select(x => x.ErrorMessage)));
+        await passwordRecoveryService.RequestPasswordResetAsync(request.Email, clientRequest.IpAddress, cancellationToken);
+        return Accepted(ApiResponse<bool>.Ok(true, PasswordRecoveryMessages.ForgotPasswordAccepted));
+    }
+
+    /// <summary>Consumes an Identity password-reset token. Successful reset requires a normal login afterward.</summary>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("reset-password")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiResponse<bool>>> ResetPassword(ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await passwordRecoveryService.ResetPasswordAsync(request, clientRequest.IpAddress, cancellationToken);
+        if (result.IsSuccess) return Ok(ApiResponse<bool>.Ok(true, PasswordRecoveryMessages.ResetSucceeded));
+        var body = ApiResponse<bool>.Fail([result.Error ?? PasswordRecoveryMessages.InvalidReset], result.ErrorCode);
+        return result.ErrorCode == PasswordRecoveryErrorCodes.SessionRevocationFailed
+            ? StatusCode(StatusCodes.Status500InternalServerError, body)
+            : BadRequest(body);
     }
 
     /// <summary>Revokes the complete refresh-token chain identified by the supplied token. Safe to repeat.</summary>

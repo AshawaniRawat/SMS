@@ -9,6 +9,7 @@ Modular monolith using Clean Architecture, SOLID and dependency injection. .NET 
 See [architecture](docs/architecture.md) for dependencies and tenant-isolation requirements.
 
 Authentication includes rotating refresh-token sessions and self-service logout/session revocation. See [logout and sessions](docs/security/logout-and-sessions.md) for the API flow and the stateless access-token limitation.
+Password recovery uses short-lived ASP.NET Identity tokens, enumeration-safe responses, and session revocation. See [password recovery](docs/security/password-recovery.md).
 
 ## Folder structure
 

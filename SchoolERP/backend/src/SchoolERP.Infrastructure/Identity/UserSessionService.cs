@@ -54,19 +54,28 @@ public sealed class UserSessionService(
     }
 
     public async Task<Result<bool>> LogoutAllAsync(Guid userId, CancellationToken cancellationToken = default)
+        => await RevokeAllAsync(userId, SessionRevocationReasons.LogoutAllDevices, "AllUserSessionsRevoked",
+            cancellationToken);
+
+    public async Task<Result<bool>> RevokeAllAfterPasswordResetAsync(Guid userId,
+        CancellationToken cancellationToken = default)
+        => await RevokeAllAsync(userId, SessionRevocationReasons.PasswordReset, "PasswordResetSessionsRevoked",
+            cancellationToken);
+
+    private async Task<Result<bool>> RevokeAllAsync(Guid userId, string reason, string auditEvent,
+        CancellationToken cancellationToken)
     {
         var strategy = context.Database.CreateExecutionStrategy();
         var count = await strategy.ExecuteAsync(async () =>
         {
             await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
             await SessionConcurrencyLock.AcquireAsync(context, userId, cancellationToken);
-            var revoked = await RevokeAsync(x => x.UserId == userId, SessionRevocationReasons.LogoutAllDevices,
-                cancellationToken);
+            var revoked = await RevokeAsync(x => x.UserId == userId, reason, cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return revoked;
         });
-        logger.LogInformation("AllUserSessionsRevoked for UserId {UserId}, Count {Count}, IP {IpAddress}",
-            userId, count, client.IpAddress);
+        logger.LogInformation("{SecurityEvent} for UserId {UserId}, Count {Count}, IP {IpAddress}",
+            auditEvent, userId, count, client.IpAddress);
         return Result<bool>.Ok(count > 0);
     }
 
