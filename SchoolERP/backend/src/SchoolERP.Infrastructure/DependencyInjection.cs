@@ -18,6 +18,8 @@ using SchoolERP.Application.Security;
 using SchoolERP.Application.Features.Roles;
 using SchoolERP.Application.Features.Permissions;
 using SchoolERP.Application.Features.RolePermissions;
+using SchoolERP.Application.Features.PlatformDashboard;
+using SchoolERP.Infrastructure.PlatformDashboard;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -30,7 +32,9 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, HttpCurrentUser>();
         services.AddScoped<IClientRequestContext, HttpClientRequestContext>();
         services.AddScoped<ICurrentTenant, CurrentTenant>();
-        services.AddScoped<IPlatformDataAccess, RestrictedPlatformDataAccess>();
+        services.AddScoped<PlatformExecutionScope>();
+        services.AddScoped<IPlatformDataAccess>(provider => provider.GetRequiredService<PlatformExecutionScope>());
+        services.AddScoped<IPlatformExecutionScope>(provider => provider.GetRequiredService<PlatformExecutionScope>());
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<SoftDeleteInterceptor>();
         services.AddScoped<TenantGuardInterceptor>();
@@ -94,6 +98,8 @@ public static class DependencyInjection
         services.AddSingleton<IRolePermissionCompatibilityService, RolePermissionCompatibilityService>();
         services.AddScoped<IRolePermissionService, RolePermissionService>();
         services.AddScoped<IUserPermissionService, UserPermissionService>();
+        services.AddScoped<IPlatformDashboardService, PlatformDashboardService>();
+        services.Configure<PlatformDashboardOptions>(configuration.GetSection(PlatformDashboardOptions.SectionName));
         services.Configure<EmailDeliverySettings>(configuration.GetSection(EmailDeliverySettings.SectionName));
         services.AddOptions<DataProtectionTokenProviderOptions>()
             .Configure<IOptions<PasswordResetOptions>>((tokenOptions, passwordReset) =>

@@ -7,11 +7,22 @@ using SchoolERP.Api.Security;
 using SchoolERP.Application.Abstractions;
 using SchoolERP.Application.Security;
 using Xunit;
+using SchoolERP.Api.Controllers.v1;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.IntegrationTests;
 
 public sealed class AuthorizationPipelineTests
 {
+    [Fact]
+    public void Platform_dashboard_declares_platform_permission()
+    {
+        var method = typeof(PlatformDashboardController).GetMethod(nameof(PlatformDashboardController.Get));
+        var attribute = Assert.Single(method!.GetCustomAttributes(typeof(RequirePermissionAttribute), true)
+            .Cast<RequirePermissionAttribute>());
+        Assert.Equal($"Permission:{PermissionCatalog.Platform.ViewDashboard}", attribute.Policy);
+    }
+
     [Fact]
     public async Task Dynamic_provider_builds_permission_policy_and_handles_other_and_malformed_names()
     {

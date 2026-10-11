@@ -48,3 +48,7 @@ Permission authorization answers what the caller may do. Tenant route validation
 `GET /api/v1/auth/me/permissions` returns the current effective codes sorted alphabetically for frontend UX. Hiding UI controls is not security—the backend policy remains authoritative.
 
 A distributed cache may be added later only with invalidation for role assignment/status, mapping, and permission-status changes.
+
+## Platform dashboard
+
+`GET /api/v1/platform/dashboard` requires `Platform.ViewDashboard`, which is mapped to `PLATFORM_SUPER_ADMIN` and not tenant roles. The dashboard service repeats the permission check, rejects tenant-assigned callers, and enables cross-tenant query filters only through a scoped `IPlatformExecutionScope` lease. Tenant users are denied, and a missing TenantId alone grants no privilege.

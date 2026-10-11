@@ -6,3 +6,8 @@ public interface IPlatformDataAccess
 {
     bool IsEnabled { get; }
 }
+
+public interface IPlatformExecutionScope
+{
+    IDisposable Begin();
+}
