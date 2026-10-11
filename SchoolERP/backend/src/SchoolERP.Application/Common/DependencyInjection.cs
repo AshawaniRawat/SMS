@@ -7,6 +7,7 @@ using SchoolERP.Application.Features.AcademicYears;
 using SchoolERP.Application.Security;
 using SchoolERP.Application.Features.SchoolProfile;
 using SchoolERP.Application.Features.SchoolClasses;
+using SchoolERP.Application.Features.ClassSections;
 namespace SchoolERP.Application.Common;
 public static class DependencyInjection
 {
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentSchoolResolver, CurrentSchoolResolver>();
         services.AddScoped<ISchoolProfileService, SchoolProfileService>();
         services.AddScoped<ISchoolClassService,SchoolClassService>();
+        services.AddScoped<IClassSectionService,ClassSectionService>();
         services.AddScoped<ICampusService, CampusService>();
         services.AddScoped<IAcademicYearService, AcademicYearService>();
         services.AddScoped<IResourceScopeValidator, ResourceScopeValidator>();

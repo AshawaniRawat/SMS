@@ -436,6 +436,125 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SchoolERP.Domain.Entities.ClassSection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AcademicYearId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("academic_year_id");
+
+                    b.Property<DateTime?>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("activated_at");
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<int?>("Capacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("capacity");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deactivated_at");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("RoomNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("room_number");
+
+                    b.Property<Guid>("SchoolClassId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("school_class_id");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("school_id");
+
+                    b.Property<string>("ShortName")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("short_name");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcademicYearId");
+
+                    b.HasIndex("SchoolClassId");
+
+                    b.HasIndex("SchoolId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("SchoolClassId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_class_sections_class_code");
+
+                    b.HasIndex("SchoolClassId", "DisplayOrder");
+
+                    b.HasIndex("SchoolClassId", "Status");
+
+                    b.HasIndex("TenantId", "SchoolId", "AcademicYearId", "SchoolClassId");
+
+                    b.ToTable("class_sections", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_class_sections_capacity", "capacity IS NULL OR (capacity BETWEEN 1 AND 500)");
+
+                            t.HasCheckConstraint("ck_class_sections_order", "display_order >= 0");
+
+                            t.HasCheckConstraint("ck_class_sections_status", "status BETWEEN 1 AND 4");
+                        });
+                });
+
             modelBuilder.Entity("SchoolERP.Domain.Entities.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -865,6 +984,9 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasAlternateKey("TenantId", "SchoolId", "AcademicYearId", "Id")
+                        .HasName("ak_school_classes_tenant_school_year_id");
+
                     b.HasIndex("AcademicYearId");
 
                     b.HasIndex("SchoolId");
@@ -878,8 +1000,6 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                     b.HasIndex("SchoolId", "AcademicYearId", "DisplayOrder");
 
                     b.HasIndex("SchoolId", "AcademicYearId", "Status");
-
-                    b.HasIndex("TenantId", "SchoolId", "AcademicYearId");
 
                     b.ToTable("school_classes", null, t =>
                         {
@@ -1912,6 +2032,44 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("School");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("SchoolERP.Domain.Entities.ClassSection", b =>
+                {
+                    b.HasOne("SchoolERP.Domain.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SchoolERP.Domain.Entities.School", "School")
+                        .WithMany()
+                        .HasForeignKey("TenantId", "SchoolId")
+                        .HasPrincipalKey("TenantId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SchoolERP.Domain.Entities.AcademicYear", "AcademicYear")
+                        .WithMany()
+                        .HasForeignKey("TenantId", "SchoolId", "AcademicYearId")
+                        .HasPrincipalKey("TenantId", "SchoolId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SchoolERP.Domain.Entities.SchoolClass", "SchoolClass")
+                        .WithMany()
+                        .HasForeignKey("TenantId", "SchoolId", "AcademicYearId", "SchoolClassId")
+                        .HasPrincipalKey("TenantId", "SchoolId", "AcademicYearId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AcademicYear");
+
+                    b.Navigation("School");
+
+                    b.Navigation("SchoolClass");
 
                     b.Navigation("Tenant");
                 });

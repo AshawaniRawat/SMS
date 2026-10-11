@@ -83,3 +83,7 @@ The catalog contains 130 system-managed permissions. This inventory is grouped b
 ## Class
 
 `Class.View`, `Class.Create`, `Class.Edit`, `Class.Activate`, `Class.Deactivate`, `Class.Archive`
+
+## Section
+
+`Section.View`, `Section.Create`, `Section.Edit`, `Section.Activate`, `Section.Deactivate`, `Section.Archive`

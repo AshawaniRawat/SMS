@@ -18,6 +18,7 @@ public sealed class SchoolErpDbContext(
     public DbSet<Campus> Campuses => Set<Campus>();
     public DbSet<AcademicYear> AcademicYears => Set<AcademicYear>();
     public DbSet<SchoolClass> SchoolClasses => Set<SchoolClass>();
+    public DbSet<ClassSection> ClassSections => Set<ClassSection>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -76,6 +77,7 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsAcademicYearCodeConflict(exception)) { throw new AcademicYearCodeConflictException(); }
         catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
         catch (DbUpdateException exception) when (IsSchoolClassCodeConflict(exception)) { throw new SchoolClassCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsClassSectionCodeConflict(exception)) { throw new ClassSectionCodeConflictException(); }
     }
 
     public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
@@ -94,6 +96,7 @@ public sealed class SchoolErpDbContext(
         catch (DbUpdateException exception) when (IsAcademicYearCodeConflict(exception)) { throw new AcademicYearCodeConflictException(); }
         catch (DbUpdateException exception) when (IsCurrentAcademicYearConflict(exception)) { throw new CurrentAcademicYearConflictException(); }
         catch (DbUpdateException exception) when (IsSchoolClassCodeConflict(exception)) { throw new SchoolClassCodeConflictException(); }
+        catch (DbUpdateException exception) when (IsClassSectionCodeConflict(exception)) { throw new ClassSectionCodeConflictException(); }
     }
 
     private static bool IsTenantSlugConflict(DbUpdateException exception) =>
@@ -120,4 +123,6 @@ public sealed class SchoolErpDbContext(
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_academic_years_school_id_current" };
     private static bool IsSchoolClassCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
         { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_school_classes_school_year_code" };
+    private static bool IsClassSectionCodeConflict(DbUpdateException exception) => exception.InnerException is PostgresException
+        { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "ux_class_sections_class_code" };
 }
