@@ -6,10 +6,12 @@ using SchoolERP.Infrastructure.Persistence.Context;
 
 namespace SchoolERP.Infrastructure.Persistence.Seed;
 
-public sealed class DatabaseSeeder(SchoolErpDbContext context, IOptions<DatabaseOptions> options, IHostEnvironment environment)
+public sealed class DatabaseSeeder(SchoolErpDbContext context, IOptions<DatabaseOptions> options,
+    IHostEnvironment environment)
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        await new PermissionSeeder(context).SeedAsync(cancellationToken);
         if (!environment.IsDevelopment() || !options.Value.SeedDevelopmentData) return;
         // Only a platform entity is seeded; tenant-owned writes need validated tenant context.
         if (await context.Tenants.AnyAsync(tenant => tenant.Slug == "demo-workspace", cancellationToken)) return;

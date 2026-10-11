@@ -9,4 +9,5 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<School> Schools { get; }
     DbSet<Campus> Campuses { get; }
     DbSet<AcademicYear> AcademicYears { get; }
+    DbSet<Permission> Permissions { get; }
 }

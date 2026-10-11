@@ -433,6 +433,112 @@ namespace SchoolERP.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SchoolERP.Domain.Entities.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("action");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Group")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("group");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystemPermission")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_system_permission");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("module");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer")
+                        .HasColumnName("scope");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_permissions_code");
+
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("ix_permissions_is_active");
+
+                    b.HasIndex("Module")
+                        .HasDatabaseName("ix_permissions_module");
+
+                    b.HasIndex("Scope")
+                        .HasDatabaseName("ix_permissions_scope");
+
+                    b.HasIndex("Module", "IsActive")
+                        .HasDatabaseName("ix_permissions_module_is_active");
+
+                    b.ToTable("permissions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_permissions_action_not_blank", "length(btrim(action)) > 0");
+
+                            t.HasCheckConstraint("ck_permissions_code_not_blank", "length(btrim(code)) > 0");
+
+                            t.HasCheckConstraint("ck_permissions_module_not_blank", "length(btrim(module)) > 0");
+
+                            t.HasCheckConstraint("ck_permissions_name_not_blank", "length(btrim(name)) > 0");
+
+                            t.HasCheckConstraint("ck_permissions_scope", "scope BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("ck_permissions_sort_order", "sort_order >= 0");
+                        });
+                });
+
             modelBuilder.Entity("SchoolERP.Domain.Entities.School", b =>
                 {
                     b.Property<Guid>("Id")
