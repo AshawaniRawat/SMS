@@ -6,7 +6,7 @@ public sealed class CreateAcademicYearRequestValidator : AbstractValidator<Creat
 {
     public CreateAcademicYearRequestValidator()
     {
-        RuleFor(x => x.SchoolId).NotEmpty(); RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Code).NotEmpty().MaximumLength(50).Matches("^[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*$");
         RuleFor(x => x.StartDate).NotEqual(default(DateOnly)); RuleFor(x => x.EndDate).GreaterThan(x => x.StartDate);
         RuleFor(x => x.EndDate).Must((x, end) => x.StartDate == default || end <= x.StartDate.AddMonths(AcademicYear.MaximumDurationMonths)).WithMessage("Academic year cannot exceed 24 months.");

@@ -3,6 +3,10 @@ using SchoolERP.Domain.Enums;
 namespace SchoolERP.Application.Features.AcademicYears;
 public interface IAcademicYearService
 {
+    Task<PagedResult<AcademicYearListItemDto>> GetAcademicYearsAsync(GetAcademicYearsQuery query,CancellationToken ct=default);
+    Task<AcademicYearDetailsDto?> GetAcademicYearAsync(Guid id,CancellationToken ct=default);
+    Task<AcademicYearDetailsDto> CreateAcademicYearAsync(CreateAcademicYearRequest request,CancellationToken ct=default);
+    Task<AcademicYearDto?> SetLockDateAsync(Guid id,SetAcademicYearLockDateRequest request,CancellationToken ct=default);
     Task<AcademicYearDto> CreateAsync(CreateAcademicYearRequest request, CancellationToken ct = default);
     Task<AcademicYearDto?> GetAsync(Guid id, CancellationToken ct = default);
     Task<AcademicYearDto?> GetForSchoolAsync(Guid schoolId, Guid academicYearId, CancellationToken ct = default);
