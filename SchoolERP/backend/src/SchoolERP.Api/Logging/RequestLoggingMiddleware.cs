@@ -1,1 +1,54 @@
-using System.Diagnostics;using Microsoft.Extensions.Options;using SchoolERP.Api.Configuration;using SchoolERP.Application.Abstractions;namespace SchoolERP.Api.Logging;public sealed class RequestLoggingMiddleware(RequestDelegate next,IOptions<SchoolErpLoggingOptions> options){public async Task InvokeAsync(HttpContext c,ILogger<RequestLoggingMiddleware> logger,ICurrentUser user,ICurrentTenant tenant){var sw=Stopwatch.StartNew();Exception? failure=null;try{await next(c);}catch(Exception ex){failure=ex;throw;}finally{sw.Stop();var id=c.Items[CorrelationIdMiddleware.ItemKey]?.ToString();var elapsed=sw.Elapsed.TotalMilliseconds;var args=new object?[]{c.Request.Method,c.Request.Path.Value,c.Response.StatusCode,elapsed,id,c.TraceIdentifier,user.UserId,tenant.IsAvailable?tenant.TenantId:null,user.SchoolId,user.CampusId};if(failure is not null||c.Response.StatusCode>=500)logger.LogError(LoggingEventIds.Http.RequestCompleted,failure,"HTTP {Method} {Path} completed {StatusCode} in {ElapsedMs:0.0} ms. CorrelationId {CorrelationId} RequestId {RequestId} UserId {UserId} TenantId {TenantId} SchoolId {SchoolId} CampusId {CampusId}",args);else if(elapsed>=options.Value.SlowRequestThresholdMs&&!c.Request.Path.StartsWithSegments("/api/health"))logger.LogWarning(LoggingEventIds.Http.SlowRequest,"Slow HTTP {Method} {Path} completed {StatusCode} in {ElapsedMs:0.0} ms. CorrelationId {CorrelationId} RequestId {RequestId} UserId {UserId} TenantId {TenantId} SchoolId {SchoolId} CampusId {CampusId}",args);else if(!c.Request.Path.StartsWithSegments("/api/health"))logger.LogInformation(LoggingEventIds.Http.RequestCompleted,"HTTP {Method} {Path} completed {StatusCode} in {ElapsedMs:0.0} ms. CorrelationId {CorrelationId} RequestId {RequestId} UserId {UserId} TenantId {TenantId} SchoolId {SchoolId} CampusId {CampusId}",args);}}}
+using System.Diagnostics;
+using Microsoft.Extensions.Options;
+using SchoolERP.Api.Configuration;
+using SchoolERP.Application.Abstractions;
+
+namespace SchoolERP.Api.Logging;
+
+public sealed class RequestLoggingMiddleware(RequestDelegate next, IOptions<SchoolErpLoggingOptions> options)
+{
+    public async Task InvokeAsync(HttpContext context, ILogger<RequestLoggingMiddleware> logger, ICurrentUser user, ICurrentTenant tenant)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var failed = false;
+        try
+        {
+            await next(context);
+        }
+        catch
+        {
+            failed = true;
+            throw;
+        }
+        finally
+        {
+            stopwatch.Stop();
+            // The global handler owns exception logging; only log requests that completed this middleware normally.
+            if (!failed)
+                LogCompletedRequest(context, logger, user, tenant, stopwatch.Elapsed.TotalMilliseconds);
+        }
+    }
+
+    private void LogCompletedRequest(HttpContext context, ILogger<RequestLoggingMiddleware> logger, ICurrentUser user, ICurrentTenant tenant, double elapsedMs)
+    {
+        var correlationId = context.Items[CorrelationIdMiddleware.ItemKey]?.ToString();
+        var arguments = new object?[]
+        {
+            context.Request.Method, context.Request.Path.Value, context.Response.StatusCode, elapsedMs,
+            correlationId, context.TraceIdentifier, user.UserId, tenant.IsAvailable ? tenant.TenantId : null,
+            user.SchoolId, user.CampusId
+        };
+        const string template = "HTTP {Method} {Path} completed {StatusCode} in {ElapsedMs:0.0} ms. " +
+                                "CorrelationId {CorrelationId} RequestId {RequestId} UserId {UserId} " +
+                                "TenantId {TenantId} SchoolId {SchoolId} CampusId {CampusId}";
+
+        if (context.Response.StatusCode >= StatusCodes.Status500InternalServerError)
+            logger.LogError(LoggingEventIds.Http.RequestCompleted, template, arguments);
+        else if (elapsedMs >= options.Value.SlowRequestThresholdMs && !IsHealthRequest(context))
+            logger.LogWarning(LoggingEventIds.Http.SlowRequest, template, arguments);
+        else if (!IsHealthRequest(context))
+            logger.LogInformation(LoggingEventIds.Http.RequestCompleted, template, arguments);
+    }
+
+    private static bool IsHealthRequest(HttpContext context) => context.Request.Path.StartsWithSegments("/api/health");
+}

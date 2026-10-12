@@ -33,6 +33,7 @@ import { HouseListPage, HouseCreatePage, HouseDetailsPage, HouseEditPage } from 
 import { CalendarListPage, CalendarCreatePage, CalendarDetailsPage, CalendarEditPage } from "@/features/school-calendar/pages/CalendarPages";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { AuditLogListPage } from "@/features/audit/pages/AuditLogListPage";
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -140,6 +141,8 @@ export function AppRouter() {
               element={<PlatformDashboardPage />}
             />
           </Route>
+          <Route element={<PermissionRoute permission="Audit.View" />}><Route path="/audit-logs" element={<AuditLogListPage/>}/></Route>
+          <Route element={<PermissionRoute permission="Audit.PlatformView" />}><Route path="/platform/audit-logs" element={<AuditLogListPage/>}/></Route>
         </Route>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />

@@ -6,6 +6,9 @@ using SchoolERP.Application.Features.Authentication;
 using SchoolERP.Application.Security;
 using SchoolERP.Infrastructure.Persistence.Context;
 using SchoolERP.Shared.Results;
+using SchoolERP.Application.Features.Audit;
+using SchoolERP.Domain.Enums;
+using SchoolERP.Domain.Security;
 
 namespace SchoolERP.Infrastructure.Identity;
 
@@ -14,7 +17,8 @@ public sealed class UserSessionService(
     IRefreshTokenHasher hasher,
     IClientRequestContext client,
     TimeProvider timeProvider,
-    ILogger<UserSessionService> logger) : ISessionService
+    ILogger<UserSessionService> logger,
+    IAuditService? audit = null) : ISessionService
 {
     public async Task<Result<bool>> LogoutSessionAsync(string? refreshToken,
         CancellationToken cancellationToken = default)
@@ -25,7 +29,7 @@ public sealed class UserSessionService(
         var hash = hasher.Hash(refreshToken);
         var identity = await context.RefreshTokens.AsNoTracking()
             .Where(x => x.TokenHash == hash)
-            .Select(x => new { x.UserId, x.SessionId })
+            .Select(x => new { x.UserId, x.SessionId, x.User.TenantId, x.User.SchoolId, x.User.CampusId })
             .SingleOrDefaultAsync(cancellationToken);
 
         if (identity is null)
@@ -43,6 +47,7 @@ public sealed class UserSessionService(
                 x => x.UserId == identity.UserId && x.SessionId == identity.SessionId,
                 SessionRevocationReasons.Logout,
                 cancellationToken);
+            if(revoked>0&&audit is not null)await audit.WriteAsync(new AuditEntry(AuditActions.Authentication.Logout,"Authentication","ApplicationUser",identity.UserId.ToString(),Outcome:AuditOutcome.Succeeded,Description:"User session logged out.",Metadata:new{reason=SessionRevocationReasons.Logout},TenantId:identity.TenantId,SchoolId:identity.SchoolId,CampusId:identity.CampusId,ActorUserId:identity.UserId,SessionId:identity.SessionId),cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return revoked;
         });
@@ -71,6 +76,7 @@ public sealed class UserSessionService(
             await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
             await SessionConcurrencyLock.AcquireAsync(context, userId, cancellationToken);
             var revoked = await RevokeAsync(x => x.UserId == userId, reason, cancellationToken);
+            if(revoked>0&&audit is not null)await audit.WriteAsync(new AuditEntry(AuditActions.Authentication.Logout,"Authentication","ApplicationUser",userId.ToString(),Outcome:AuditOutcome.Succeeded,Description:"User sessions revoked.",Metadata:new{reason,count=revoked},ActorUserId:userId),cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return revoked;
         });

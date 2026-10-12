@@ -16,6 +16,7 @@ using System.Text.Encodings.Web;
 using System.Security.Claims;
 using SchoolERP.Application.Security;
 using SchoolERP.Domain.Security;
+using System.Text.Json;
 
 namespace SchoolERP.IntegrationTests;
 
@@ -103,8 +104,18 @@ public sealed class HealthTests(PostgresFixture database)
         var document = await client.GetAsync("/swagger/v1/swagger.json");
         Assert.Equal(HttpStatusCode.OK, document.StatusCode);
         var json = await document.Content.ReadAsStringAsync();
-        Assert.Contains("SchoolERP API", json);
-        Assert.Contains("Bearer", json);
+        using var parsed=JsonDocument.Parse(json);var root=parsed.RootElement;
+        Assert.Equal("3.0.4",root.GetProperty("openapi").GetString());
+        Assert.Equal("SchoolERP API v1",root.GetProperty("info").GetProperty("title").GetString());
+        var bearer=root.GetProperty("components").GetProperty("securitySchemes").GetProperty("Bearer");
+        Assert.Equal("http",bearer.GetProperty("type").GetString());Assert.Equal("bearer",bearer.GetProperty("scheme").GetString());
+        var paths=root.GetProperty("paths");Assert.False(paths.GetProperty("/api/v1/auth/login").GetProperty("post").TryGetProperty("security",out _));
+        var campus=paths.GetProperty("/api/v1/campuses/{id}").GetProperty("put");Assert.True(campus.TryGetProperty("security",out _));Assert.Equal("Campus.Edit",campus.GetProperty("x-required-permissions")[0].GetString());
+        Assert.True(campus.GetProperty("requestBody").GetProperty("content").TryGetProperty("application/json",out _));
+        var errorSchema=campus.GetProperty("responses").GetProperty("400").GetProperty("content").GetProperty("application/json").GetProperty("schema").GetProperty("$ref").GetString();Assert.Contains("ApiErrorResponse",errorSchema);
+        var calendar=root.GetProperty("components").GetProperty("schemas").GetProperty("SchoolERP.Application.Features.SchoolCalendar.CalendarEventRequest");Assert.Equal("time",calendar.GetProperty("properties").GetProperty("startTime").GetProperty("format").GetString());
+        var auditParameters=paths.GetProperty("/api/v1/audit-logs").GetProperty("get").GetProperty("parameters");Assert.Contains(auditParameters.EnumerateArray(),x=>x.GetProperty("name").GetString()=="pageNumber");Assert.Contains(auditParameters.EnumerateArray(),x=>x.GetProperty("name").GetString()=="pageSize");
+        Assert.DoesNotContain("PasswordHash",json,StringComparison.OrdinalIgnoreCase);Assert.DoesNotContain("SecurityStamp",json,StringComparison.OrdinalIgnoreCase);Assert.DoesNotContain("TokenHash",json,StringComparison.OrdinalIgnoreCase);Assert.DoesNotContain("test-only-signing-key",json,StringComparison.OrdinalIgnoreCase);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/swagger/index.html")).StatusCode);
     }
 
@@ -135,6 +146,7 @@ public sealed class HealthTests(PostgresFixture database)
             "Host=127.0.0.1;Port=1;Database=unavailable;Username=unused;Timeout=1", "Production", initializeDatabase: true);
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/swagger/v1/swagger.json")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/swagger/index.html")).StatusCode);
     }
 }
 

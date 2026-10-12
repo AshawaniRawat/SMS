@@ -27,6 +27,7 @@ public sealed class SchoolErpDbContext(
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     // Properties on the context make the cached EF model use each context's tenant values.
     public Guid? CurrentTenantId => currentTenant.IsAvailable ? currentTenant.TenantId : null;

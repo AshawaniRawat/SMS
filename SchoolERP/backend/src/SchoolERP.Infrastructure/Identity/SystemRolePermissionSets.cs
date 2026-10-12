@@ -28,6 +28,7 @@ public static class SystemRolePermissionSets
                 PermissionCatalog.Exam.View, PermissionCatalog.Exam.VerifyMarks, PermissionCatalog.Exam.Publish,
                 PermissionCatalog.Homework.View, PermissionCatalog.Employee.View, PermissionCatalog.Report.View,
                 PermissionCatalog.Communication.View, PermissionCatalog.Communication.Broadcast
+                ,PermissionCatalog.Audit.View
             ],
             [SystemRoleCodes.Teacher] =
             [

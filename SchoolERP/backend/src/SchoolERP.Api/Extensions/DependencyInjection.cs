@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 using SchoolERP.Application.Security;
 using Microsoft.Extensions.Options;
 using System.Reflection;
@@ -13,38 +12,21 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using SchoolERP.Api.Security;
 using SchoolERP.Api.Logging;
+using SchoolERP.Api.ErrorHandling;
+using Microsoft.AspNetCore.Mvc;
+using SchoolERP.Api.OpenApi;
 namespace SchoolERP.Api.Extensions;
 public static class DependencyInjection
 {
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddControllers();
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(options =>
-        {
-            options.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "SchoolERP API",
-                Version = "v1",
-                Description = "Backend API for SchoolERP. Use the login endpoint to obtain a JWT, then select Authorize and enter the token."
-            });
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT",
-                Description = "Enter the access token issued by POST /api/v1/auth/login."
-            });
-            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
-            {
-                [new OpenApiSecuritySchemeReference("Bearer", document, null)] = []
-            });
-        });
+        services.AddControllers().ConfigureApiBehaviorOptions(options=>options.InvalidModelStateResponseFactory=context=>{var malformed=context.ModelState.Any(x=>x.Key=="$"&&x.Value?.Errors.Count>0)||context.ModelState.Values.SelectMany(x=>x.Errors).Any(x=>x.Exception is not null);var errors=context.ModelState.Where(x=>x.Value?.Errors.Count>0).ToDictionary(x=>string.IsNullOrEmpty(x.Key)?"body":char.ToLowerInvariant(x.Key[0])+x.Key[1..],x=>x.Value!.Errors.Select(e=>malformed?"The supplied value is invalid.":string.IsNullOrWhiteSpace(e.ErrorMessage)?"The supplied value is invalid.":e.ErrorMessage).Distinct().ToArray());var code=malformed?ErrorCodes.InvalidJson:ErrorCodes.ValidationFailed;var message=malformed?"Request body contains invalid JSON.":"One or more validation errors occurred.";return new BadRequestObjectResult(ApiErrorWriter.Create(context.HttpContext,code,message,400,errors));});
+        services.AddSchoolErpOpenApi(configuration);
         services.AddProblemDetails();
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.OnRejected=async(context,ct)=>await ApiErrorWriter.WriteAsync(context.HttpContext,ApiErrorWriter.Create(context.HttpContext,ErrorCodes.RateLimit,"Too many requests. Please try again later.",429),ct);
             options.AddPolicy("login", httpContext => RateLimitPartition.GetFixedWindowLimiter(
                 httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 _ => new FixedWindowRateLimiterOptions
@@ -88,9 +70,8 @@ public static class DependencyInjection
                     PermitLimit = 20, Window = TimeSpan.FromMinutes(15), QueueLimit = 0, AutoReplenishment = true
                 }));
         });
-        services.AddExceptionHandler<PersistenceExceptionHandler>();
-        services.AddExceptionHandler<DatabaseExceptionHandler>();
-        services.AddExceptionHandler<UnhandledExceptionHandler>();
+        services.AddSingleton<IExceptionMapper,ApiExceptionMapper>();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddOptions<SchoolErpLoggingOptions>().Bind(configuration.GetSection(SchoolErpLoggingOptions.SectionName)).ValidateDataAnnotations().Validate(x=>!string.IsNullOrWhiteSpace(x.CorrelationHeaderName)&&!x.CorrelationHeaderName.Any(char.IsControl),"Correlation header name is invalid.").ValidateOnStart();
         services.AddScoped<ICorrelationContext,HttpCorrelationContext>();
         services.AddSingleton<ILogRedactor,LogRedactor>();

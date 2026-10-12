@@ -22,6 +22,8 @@ using SchoolERP.Application.Features.PlatformDashboard;
 using SchoolERP.Infrastructure.PlatformDashboard;
 using SchoolERP.Application.Features.SchoolDashboard;
 using SchoolERP.Infrastructure.SchoolDashboard;
+using SchoolERP.Application.Features.Audit;
+using SchoolERP.Infrastructure.Audit;
 namespace SchoolERP.Infrastructure;
 public static class DependencyInjection
 {
@@ -41,6 +43,11 @@ public static class DependencyInjection
         services.AddScoped<SoftDeleteInterceptor>();
         services.AddScoped<TenantGuardInterceptor>();
         services.AddScoped<ConcurrencyTokenInterceptor>();
+        services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddOptions<AuditLogOptions>().Bind(configuration.GetSection(AuditLogOptions.SectionName)).Validate(x=>x.DefaultQueryDays>0&&x.MaxQueryRangeDays>=x.DefaultQueryDays&&x.MaxMetadataBytes is >=1024 and <=65536,"AuditLog options are invalid.").ValidateOnStart();
+        services.AddSingleton<IAuditDataSanitizer,AuditDataSanitizer>();
+        services.AddScoped<IAuditService,AuditService>();
+        services.AddScoped<IAuditQueryService,AuditQueryService>();
         services.AddScoped<DatabaseSeeder>();
         services.AddScoped<PermissionSeeder>();
         services.AddScoped<RolePermissionSeeder>();
@@ -64,6 +71,7 @@ public static class DependencyInjection
                 provider.GetRequiredService<TenantGuardInterceptor>(),
                 provider.GetRequiredService<SoftDeleteInterceptor>(),
                 provider.GetRequiredService<ConcurrencyTokenInterceptor>());
+            options.AddInterceptors(provider.GetRequiredService<AuditSaveChangesInterceptor>());
             if (environment.IsDevelopment() && database.EnableSensitiveDataLogging)
                 options.EnableSensitiveDataLogging();
             if (environment.IsDevelopment() && database.EnableDetailedErrors)

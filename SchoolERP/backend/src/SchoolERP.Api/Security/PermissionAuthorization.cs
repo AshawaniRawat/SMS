@@ -5,6 +5,7 @@ using SchoolERP.Application.Abstractions;
 using SchoolERP.Application.Security;
 using SchoolERP.Shared.Models;
 using SchoolERP.Api.Logging;
+using SchoolERP.Api.ErrorHandling;
 
 namespace SchoolERP.Api.Security;
 
@@ -76,15 +77,12 @@ public sealed class ApiAuthorizationResultHandler : IAuthorizationMiddlewareResu
         if (authorizeResult.Challenged)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(["Authentication is required."],
-                "Authorization.Unauthenticated"), context.RequestAborted); return;
+            await ApiErrorWriter.WriteAsync(context,ApiErrorWriter.Create(context,ErrorCodes.Unauthenticated,"Authentication is required.",401),context.RequestAborted); return;
         }
         if (authorizeResult.Forbidden)
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(ApiResponse<object>.Fail(
-                ["You do not have permission to perform this action."], "Authorization.PermissionDenied"),
-                context.RequestAborted); return;
+            await ApiErrorWriter.WriteAsync(context,ApiErrorWriter.Create(context,ErrorCodes.PermissionDenied,"You do not have permission to perform this action.",403),context.RequestAborted); return;
         }
         await _default.HandleAsync(next, context, policy, authorizeResult);
     }

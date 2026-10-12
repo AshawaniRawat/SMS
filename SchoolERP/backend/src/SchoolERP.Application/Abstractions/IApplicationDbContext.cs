@@ -18,4 +18,5 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<SchoolCalendarEvent> SchoolCalendarEvents { get; }
     DbSet<Permission> Permissions { get; }
     DbSet<RolePermission> RolePermissions { get; }
+    DbSet<AuditLog> AuditLogs { get; }
 }

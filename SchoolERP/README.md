@@ -169,3 +169,7 @@ dotnet user-secrets set "Jwt:SigningKey" $key --project src/SchoolERP.Api
 
 Backend logs are written to the console as structured events. API responses include `X-Correlation-ID`; provide this value when reporting an error. Change local levels with `Serilog__MinimumLevel__Default` or development configuration. Never place secrets in logging configuration or commit production credentials.
 
+# API documentation
+
+In Development, open `/swagger` for Swagger UI or `/swagger/v1/swagger.json` for the OpenAPI 3 contract. Obtain a development access token through login, select **Authorize**, and paste only the access token. Swagger uses real authentication and permissions. Production JSON and UI exposure are disabled by default through `OpenApi` configuration.
+

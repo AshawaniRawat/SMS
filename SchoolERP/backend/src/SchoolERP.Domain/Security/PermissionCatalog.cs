@@ -40,7 +40,7 @@ public static partial class PermissionCatalog
     public static class Hostel { public const string View = "Hostel.View", Configure = "Hostel.Configure", AssignStudent = "Hostel.AssignStudent", ManageRoom = "Hostel.ManageRoom"; }
     public static class Communication { public const string View = "Communication.View", Send = "Communication.Send", Broadcast = "Communication.Broadcast", ManageTemplate = "Communication.ManageTemplate"; }
     public static class Report { public const string View = "Report.View", Export = "Report.Export"; }
-    public static class Audit { public const string View = "Audit.View", Export = "Audit.Export"; }
+    public static class Audit { public const string View = "Audit.View", PlatformView = "Audit.PlatformView", Export = "Audit.Export"; }
 
     public static IReadOnlyList<PermissionDefinition> All { get; } = Build();
 
@@ -92,7 +92,7 @@ public static partial class PermissionCatalog
         Add(rows, PermissionScope.Campus, Hostel.View, Hostel.Configure, Hostel.AssignStudent, Hostel.ManageRoom);
         Add(rows, PermissionScope.School, Communication.View, Communication.Send, Communication.Broadcast, Communication.ManageTemplate);
         Add(rows, PermissionScope.School, Report.View, Report.Export);
-        Add(rows, PermissionScope.Tenant, Audit.View, Audit.Export);
+        Add(rows, PermissionScope.School, Audit.View, Audit.Export);
         // Appended to preserve deterministic IDs of the P1-18 catalog.
         Add(rows, PermissionScope.School, Role.ManagePermissions, Permission.View);
         Add(rows, PermissionScope.School, School.ViewDashboard);
@@ -102,6 +102,7 @@ public static partial class PermissionCatalog
         Add(rows,PermissionScope.School,Department.View,Department.Create,Department.Edit,Department.Activate,Department.Deactivate,Department.Archive);
         Add(rows,PermissionScope.School,House.View,House.Create,House.Edit,House.Activate,House.Deactivate,House.Archive);
         Add(rows,PermissionScope.School,Calendar.View,Calendar.Create,Calendar.Edit,Calendar.Publish,Calendar.Cancel,Calendar.Archive);
+        Add(rows,PermissionScope.Platform,Audit.PlatformView);
         return rows.AsReadOnly();
     }
 

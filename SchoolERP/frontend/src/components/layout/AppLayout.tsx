@@ -17,6 +17,7 @@ import {
   Network,
   Shield,
   CalendarRange,
+  ScrollText,
 } from "lucide-react";
 import { session } from "@/auth/session";
 export function AppLayout() {
@@ -132,6 +133,8 @@ export function AppLayout() {
               <Settings size={18} /> School Profile
             </NavLink>
           )}
+          {session.hasPermission("Audit.View")&&<NavLink to="/audit-logs" onClick={()=>setOpen(false)} className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold"><ScrollText size={18}/> Audit logs</NavLink>}
+          {session.hasPermission("Audit.PlatformView")&&<NavLink to="/platform/audit-logs" onClick={()=>setOpen(false)} className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold"><ScrollText size={18}/> Platform audit</NavLink>}
           {session.hasPermission("Platform.ViewDashboard") && (
             <NavLink
               to="/platform/dashboard"
