@@ -18,9 +18,12 @@ jobs:
           cache-dependency-path: SchoolERP/frontend/package-lock.json
       - run: dotnet restore backend/SchoolERP.sln
       - run: dotnet build backend/SchoolERP.sln --no-restore --configuration Release
+      - run: dotnet test backend/tests/SchoolERP.UnitTests/SchoolERP.UnitTests.csproj --no-build --configuration Release
+        timeout-minutes: 5
+      - run: dotnet test backend/tests/SchoolERP.IntegrationTests/SchoolERP.IntegrationTests.csproj --no-build --configuration Release
+        timeout-minutes: 10
       - run: dotnet test backend/SchoolERP.sln --no-build --configuration Release
-        env:
-          SCHOOLERP_TEST_USE_CONTAINERS: 'true'
+        timeout-minutes: 12
       - run: npm ci --prefix frontend
       - run: npm run build --prefix frontend
       - run: docker compose config --quiet

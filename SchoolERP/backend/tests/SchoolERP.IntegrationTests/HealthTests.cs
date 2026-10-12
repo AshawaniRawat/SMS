@@ -20,7 +20,7 @@ using System.Text.Json;
 
 namespace SchoolERP.IntegrationTests;
 
-public sealed class ApiFactory(string? connectionString = null, string environment = "Development", bool initializeDatabase = false,
+public class ApiFactory(string? connectionString = null, string environment = "Development", bool initializeDatabase = false,
     Guid? tenantId = null, Action<IServiceCollection>? configureServices = null, bool authorizePlatform = false) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)

@@ -173,3 +173,11 @@ Backend logs are written to the console as structured events. API responses incl
 
 In Development, open `/swagger` for Swagger UI or `/swagger/v1/swagger.json` for the OpenAPI 3 contract. Obtain a development access token through login, select **Authorize**, and paste only the access token. Swagger uses real authentication and permissions. Production JSON and UI exposure are disabled by default through `OpenApi` configuration.
 
+# Testing
+
+Run backend unit tests with `dotnet test tests/SchoolERP.UnitTests/SchoolERP.UnitTests.csproj` from `backend`. Coverage is available with `--collect:"XPlat Code Coverage"`. See [unit-testing guidance](docs/testing/unit-testing.md).
+
+## Integration tests
+
+Run `dotnet test tests/SchoolERP.IntegrationTests/SchoolERP.IntegrationTests.csproj` from `backend`. A running Docker-compatible runtime is required; Testcontainers provisions disposable PostgreSQL and applies the real migrations automatically. No locally installed database or developer secret is used. See [integration-testing guidance](docs/testing/integration-testing.md) for isolation, authentication, filtering, and debugging details.
+

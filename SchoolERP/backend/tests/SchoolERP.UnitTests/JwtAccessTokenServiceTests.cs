@@ -8,6 +8,7 @@ using SchoolERP.Application.Security;
 using SchoolERP.Domain.Enums;
 using SchoolERP.Infrastructure.Identity;
 using Xunit;
+using SchoolERP.UnitTests.TestCommon;
 
 namespace SchoolERP.UnitTests;
 
@@ -38,6 +39,13 @@ public sealed class JwtAccessTokenServiceTests
     {
         var token = new JwtSecurityTokenHandler().ReadJwtToken(Service().GenerateToken(User()).AccessToken);
         Assert.DoesNotContain(token.Claims, x => x.Type is CustomClaimTypes.TenantId or CustomClaimTypes.SchoolId or CustomClaimTypes.CampusId);
+    }
+
+    [Fact]
+    public void Access_token_never_embeds_permission_claims()
+    {
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(Service().GenerateToken(User(TestIds.TenantA,TestIds.SchoolA,TestIds.CampusA)).AccessToken);
+        Assert.DoesNotContain(token.Claims,x=>x.Type.Contains("permission",StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

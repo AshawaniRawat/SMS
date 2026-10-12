@@ -14,11 +14,11 @@ public sealed class PostgresFactAttribute : FactAttribute
     public PostgresFactAttribute()
     {
         if (!PostgresFixture.IsEnabled)
-            Skip = "Set SCHOOLERP_TEST_USE_CONTAINERS=true for Testcontainers, or SCHOOLERP_TEST_POSTGRES for an isolated native PostgreSQL test database.";
+            Skip = "Integration tests were explicitly disabled with SCHOOLERP_TEST_SKIP_CONTAINERS=true.";
     }
 }
 
-[CollectionDefinition(Name)]
+[CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class PostgresCollection : ICollectionFixture<PostgresFixture>
 {
     public const string Name = "PostgreSQL persistence";
@@ -30,20 +30,17 @@ public sealed class PostgresFixture : IAsyncLifetime
     private string? _administrationConnectionString;
     private readonly string _databaseName = "schoolerp_tests_" + Guid.NewGuid().ToString("N");
     private bool _databaseCreated;
+    private DatabaseResetter? _resetter;
     public string ConnectionString { get; private set; } = string.Empty;
-    public static bool IsEnabled => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SCHOOLERP_TEST_POSTGRES")) ||
-        string.Equals(Environment.GetEnvironmentVariable("SCHOOLERP_TEST_USE_CONTAINERS"), "true", StringComparison.OrdinalIgnoreCase);
+    public static bool IsEnabled => !string.Equals(
+        Environment.GetEnvironmentVariable("SCHOOLERP_TEST_SKIP_CONTAINERS"), "true", StringComparison.OrdinalIgnoreCase);
 
     public async Task InitializeAsync()
     {
         if (!IsEnabled) return;
-        _administrationConnectionString = Environment.GetEnvironmentVariable("SCHOOLERP_TEST_POSTGRES");
-        if (string.IsNullOrWhiteSpace(_administrationConnectionString))
-        {
-            _container = new PostgreSqlBuilder("postgres:18.6-alpine").Build();
-            await _container.StartAsync();
-            _administrationConnectionString = _container.GetConnectionString();
-        }
+        _container = new PostgreSqlBuilder("postgres:18.6-alpine").Build();
+        await _container.StartAsync();
+        _administrationConnectionString = _container.GetConnectionString();
         await using var connection = new NpgsqlConnection(_administrationConnectionString);
         await connection.OpenAsync();
         // Internally generated identifier: never migrate or delete an existing developer database.
@@ -56,7 +53,11 @@ public sealed class PostgresFixture : IAsyncLifetime
         }.ConnectionString;
         await using var context = CreateContext(platformAccess: true);
         await context.Database.MigrateAsync();
+        _resetter = await DatabaseResetter.CreateAsync(ConnectionString);
     }
+
+    public Task ResetDatabaseAsync(CancellationToken cancellationToken = default) =>
+        _resetter?.ResetAsync(cancellationToken) ?? Task.CompletedTask;
 
     public SchoolErpDbContext CreateContext(Guid? tenantId = null, bool platformAccess = false)
     {
