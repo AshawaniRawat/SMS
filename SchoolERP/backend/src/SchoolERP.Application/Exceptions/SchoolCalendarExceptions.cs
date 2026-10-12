@@ -1,0 +1,1 @@
+namespace SchoolERP.Application.Exceptions;public sealed class SchoolCalendarCodeConflictException:Exception{public SchoolCalendarCodeConflictException():base("SchoolCalendar.CodeAlreadyExists"){}}public sealed class SchoolCalendarParentUnavailableException(string message):Exception(message);

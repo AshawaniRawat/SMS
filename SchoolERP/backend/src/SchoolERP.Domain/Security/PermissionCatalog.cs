@@ -18,6 +18,8 @@ public static partial class PermissionCatalog
     public static class Section { public const string View="Section.View",Create="Section.Create",Edit="Section.Edit",Activate="Section.Activate",Deactivate="Section.Deactivate",Archive="Section.Archive"; }
     public static class Subject { public const string View="Subject.View",Create="Subject.Create",Edit="Subject.Edit",Activate="Subject.Activate",Deactivate="Subject.Deactivate",Archive="Subject.Archive",ManageClassMapping="Subject.ManageClassMapping"; }
     public static class Department { public const string View="Department.View",Create="Department.Create",Edit="Department.Edit",Activate="Department.Activate",Deactivate="Department.Deactivate",Archive="Department.Archive"; }
+    public static class House { public const string View="House.View",Create="House.Create",Edit="House.Edit",Activate="House.Activate",Deactivate="House.Deactivate",Archive="House.Archive"; }
+    public static class Calendar { public const string View="Calendar.View",Create="Calendar.Create",Edit="Calendar.Edit",Publish="Calendar.Publish",Cancel="Calendar.Cancel",Archive="Calendar.Archive"; }
     public static class User { public const string View = "User.View", Create = "User.Create", Edit = "User.Edit", Activate = "User.Activate", Suspend = "User.Suspend", Deactivate = "User.Deactivate", AssignRole = "User.AssignRole"; }
     public static class Role { public const string View = "Role.View", Create = "Role.Create", Edit = "Role.Edit", Activate = "Role.Activate", Deactivate = "Role.Deactivate", Archive = "Role.Archive", AssignUser = "Role.AssignUser", ManagePermissions = "Role.ManagePermissions"; }
     public static class Permission { public const string View = "Permission.View"; }
@@ -98,6 +100,8 @@ public static partial class PermissionCatalog
         Add(rows,PermissionScope.School,Section.View,Section.Create,Section.Edit,Section.Activate,Section.Deactivate,Section.Archive);
         Add(rows,PermissionScope.School,Subject.View,Subject.Create,Subject.Edit,Subject.Activate,Subject.Deactivate,Subject.Archive,Subject.ManageClassMapping);
         Add(rows,PermissionScope.School,Department.View,Department.Create,Department.Edit,Department.Activate,Department.Deactivate,Department.Archive);
+        Add(rows,PermissionScope.School,House.View,House.Create,House.Edit,House.Activate,House.Deactivate,House.Archive);
+        Add(rows,PermissionScope.School,Calendar.View,Calendar.Create,Calendar.Edit,Calendar.Publish,Calendar.Cancel,Calendar.Archive);
         return rows.AsReadOnly();
     }
 

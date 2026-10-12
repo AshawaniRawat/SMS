@@ -29,6 +29,8 @@ import {
 } from "@/features/sections/classSections";
 import { SubjectListPage, SubjectCreatePage, SubjectDetailsPage, SubjectEditPage, ClassSubjectsPage } from "@/features/subjects/subjects";
 import { DepartmentListPage, DepartmentCreatePage, DepartmentDetailsPage, DepartmentEditPage } from "@/features/departments/pages/DepartmentPages";
+import { HouseListPage, HouseCreatePage, HouseDetailsPage, HouseEditPage } from "@/features/houses/pages/HousePages";
+import { CalendarListPage, CalendarCreatePage, CalendarDetailsPage, CalendarEditPage } from "@/features/school-calendar/pages/CalendarPages";
 import { UnauthorizedPage } from "@/pages/UnauthorizedPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 export function AppRouter() {
@@ -117,6 +119,19 @@ export function AppRouter() {
           <Route element={<PermissionRoute permission="Department.Edit" />}>
             <Route path="/departments/:id/edit" element={<DepartmentEditPage />} />
           </Route>
+          <Route element={<PermissionRoute permission="House.View" />}>
+            <Route path="/houses" element={<HouseListPage />} />
+            <Route path="/houses/:id" element={<HouseDetailsPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="House.Create" />}>
+            <Route path="/houses/new" element={<HouseCreatePage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="House.Edit" />}>
+            <Route path="/houses/:id/edit" element={<HouseEditPage />} />
+          </Route>
+          <Route element={<PermissionRoute permission="Calendar.View" />}><Route path="/calendar" element={<CalendarListPage/>}/><Route path="/calendar/:id" element={<CalendarDetailsPage/>}/></Route>
+          <Route element={<PermissionRoute permission="Calendar.Create" />}><Route path="/calendar/new" element={<CalendarCreatePage/>}/></Route>
+          <Route element={<PermissionRoute permission="Calendar.Edit" />}><Route path="/calendar/:id/edit" element={<CalendarEditPage/>}/></Route>
           <Route
             element={<PermissionRoute permission="Platform.ViewDashboard" />}
           >

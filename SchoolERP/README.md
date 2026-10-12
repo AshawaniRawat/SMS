@@ -165,3 +165,7 @@ dotnet user-secrets set "Jwt:SigningKey" $key --project src/SchoolERP.Api
 ```
 
 `Jwt:Issuer` defaults to `SchoolERP.Api` and `Jwt:Audience` to `SchoolERP.Client`. Production must use `Jwt__SigningKey` or a managed secret store and HTTPS; never commit a real key.
+# Development logging
+
+Backend logs are written to the console as structured events. API responses include `X-Correlation-ID`; provide this value when reporting an error. Change local levels with `Serilog__MinimumLevel__Default` or development configuration. Never place secrets in logging configuration or commit production credentials.
+

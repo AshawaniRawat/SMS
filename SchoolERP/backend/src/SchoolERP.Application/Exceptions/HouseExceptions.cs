@@ -1,0 +1,1 @@
+namespace SchoolERP.Application.Exceptions;public sealed class HouseCodeConflictException:Exception{public HouseCodeConflictException():base("House.CodeAlreadyExists"){}}public sealed class HouseNameConflictException:Exception{public HouseNameConflictException():base("House.NameAlreadyExists"){}}

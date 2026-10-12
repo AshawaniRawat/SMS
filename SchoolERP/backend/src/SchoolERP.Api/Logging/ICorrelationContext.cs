@@ -1,0 +1,1 @@
+namespace SchoolERP.Api.Logging;public interface ICorrelationContext{string CorrelationId{get;}}public sealed class HttpCorrelationContext(IHttpContextAccessor accessor):ICorrelationContext{public string CorrelationId=>accessor.HttpContext?.Items[CorrelationIdMiddleware.ItemKey]?.ToString()??string.Empty;}

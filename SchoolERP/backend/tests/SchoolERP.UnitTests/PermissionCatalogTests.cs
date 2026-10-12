@@ -12,7 +12,7 @@ public sealed class PermissionCatalogTests
     public void Catalog_is_valid_deterministic_and_contains_sensitive_permissions()
     {
         Assert.Empty(PermissionCatalog.Validate());
-        Assert.Equal(155, PermissionCatalog.All.Count);
+        Assert.Equal(167, PermissionCatalog.All.Count);
         Assert.Equal(PermissionCatalog.All.Count,
             PermissionCatalog.All.Select(x => x.Code).Distinct(StringComparer.Ordinal).Count());
         Assert.All(PermissionCatalog.All, item =>
@@ -30,6 +30,8 @@ public sealed class PermissionCatalogTests
         Assert.NotNull(PermissionCatalog.FindByCode(PermissionCatalog.Section.Archive));
         Assert.NotNull(PermissionCatalog.FindByCode(PermissionCatalog.Subject.ManageClassMapping));
         Assert.NotNull(PermissionCatalog.FindByCode(PermissionCatalog.Department.Archive));
+        Assert.NotNull(PermissionCatalog.FindByCode(PermissionCatalog.House.Archive));
+        Assert.NotNull(PermissionCatalog.FindByCode(PermissionCatalog.Calendar.Publish));
     }
 
     [Fact]

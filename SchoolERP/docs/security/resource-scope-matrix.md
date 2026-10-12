@@ -46,3 +46,15 @@ Tenant-level users have no SchoolId or CampusId claim and can operate across sch
 |---|---:|---:|---:|---|---|
 | Department | Yes | Yes | Optional | School-wide + own campus | Tenant/school/campus resources are hidden (404) |
 
+## P1-32 House scope
+
+| Resource | Tenant scoped | School scoped | Academic Year scoped | Cross-tenant | Cross-school |
+|---|---:|---:|---:|---|---|
+| House | Yes | Yes | No | 404 | 404 |
+
+## P1-33 School calendar scope
+
+| Resource | Tenant | School | Campus | Academic Year | Campus-scoped caller | Cross-scope |
+|---|---:|---:|---:|---:|---|---|
+| School calendar event | Yes | Yes | Optional | Optional | School-wide + own campus | Hidden/404 |
+

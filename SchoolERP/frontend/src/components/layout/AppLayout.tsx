@@ -15,6 +15,8 @@ import {
   Layers,
   BookMarked,
   Network,
+  Shield,
+  CalendarRange,
 } from "lucide-react";
 import { session } from "@/auth/session";
 export function AppLayout() {
@@ -115,6 +117,12 @@ export function AppLayout() {
               <Network size={18} /> Departments
             </NavLink>
           )}
+          {session.hasPermission("House.View") && (
+            <NavLink to="/houses" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold">
+              <Shield size={18} /> Houses
+            </NavLink>
+          )}
+          {session.hasPermission("Calendar.View") && (<NavLink to="/calendar" onClick={()=>setOpen(false)} className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold"><CalendarRange size={18}/> Calendar</NavLink>)}
           {session.hasPermission("School.View") && (
             <NavLink
               to="/settings/school"

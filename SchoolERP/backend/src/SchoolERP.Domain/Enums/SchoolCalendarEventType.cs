@@ -1,0 +1,1 @@
+namespace SchoolERP.Domain.Enums;public enum SchoolCalendarEventType{PublicHoliday=1,SchoolHoliday=2,Vacation=3,WorkingDay=4,AcademicEvent=5,AdministrativeEvent=6,ParentMeeting=7,SchoolEvent=8,Training=9,Other=99}

@@ -10,6 +10,8 @@ using SchoolERP.Application.Features.SchoolClasses;
 using SchoolERP.Application.Features.ClassSections;
 using SchoolERP.Application.Features.Subjects;
 using SchoolERP.Application.Features.Departments;
+using SchoolERP.Application.Features.Houses;
+using SchoolERP.Application.Features.SchoolCalendar;
 namespace SchoolERP.Application.Common;
 public static class DependencyInjection
 {
@@ -24,6 +26,8 @@ public static class DependencyInjection
         services.AddScoped<IClassSectionService,ClassSectionService>();
         services.AddScoped<ISubjectService,SubjectService>();
         services.AddScoped<IDepartmentService,DepartmentService>();
+        services.AddScoped<IHouseService,HouseService>();
+        services.AddScoped<ISchoolCalendarService,SchoolCalendarService>();
         services.AddScoped<ICampusService, CampusService>();
         services.AddScoped<IAcademicYearService, AcademicYearService>();
         services.AddScoped<IResourceScopeValidator, ResourceScopeValidator>();

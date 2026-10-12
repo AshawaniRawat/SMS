@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using SchoolERP.Application.Abstractions;
 using SchoolERP.Application.Security;
 using SchoolERP.Shared.Models;
+using SchoolERP.Api.Logging;
 
 namespace SchoolERP.Api.Security;
 
@@ -61,7 +62,7 @@ public sealed class PermissionAuthorizationHandler(IUserPermissionService permis
         {
             context.Succeed(requirement); return;
         }
-        logger.LogInformation("Permission denied. UserId {UserId}, TenantId {TenantId}, Permission {PermissionCode}, Method {Method}, Path {Path}",
+        logger.LogWarning(LoggingEventIds.Security.PermissionDenied,"Permission denied. UserId {UserId}, TenantId {TenantId}, Permission {PermissionCode}, Method {Method}, Path {Path}",
             userId, currentUser.TenantId, requirement.PermissionCode, http?.Request.Method, http?.Request.Path.Value);
     }
 }

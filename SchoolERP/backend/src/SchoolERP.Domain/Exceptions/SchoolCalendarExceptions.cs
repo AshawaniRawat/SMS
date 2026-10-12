@@ -1,0 +1,1 @@
+namespace SchoolERP.Domain.Exceptions;public sealed class SchoolCalendarInvalidTransitionException():DomainException("SchoolCalendar.InvalidStatusTransition");public sealed class SchoolCalendarArchivedReadOnlyException():DomainException("SchoolCalendar.ArchivedReadOnly");

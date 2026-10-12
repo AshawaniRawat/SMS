@@ -14,6 +14,8 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<Subject> Subjects { get; }
     DbSet<ClassSubject> ClassSubjects { get; }
     DbSet<Department> Departments { get; }
+    DbSet<House> Houses { get; }
+    DbSet<SchoolCalendarEvent> SchoolCalendarEvents { get; }
     DbSet<Permission> Permissions { get; }
     DbSet<RolePermission> RolePermissions { get; }
 }

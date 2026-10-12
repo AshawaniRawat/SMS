@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SchoolERP.Application.Exceptions;
 using SchoolERP.Domain.Exceptions;
 using FluentValidation;
+using SchoolERP.Api.Logging;
 
 namespace SchoolERP.Api.Middleware;
 
@@ -33,6 +34,14 @@ public sealed class PersistenceExceptionHandler(ILogger<PersistenceExceptionHand
             DepartmentCodeConflictException => (StatusCodes.Status409Conflict,exception.Message),
             DepartmentNameConflictException => (StatusCodes.Status409Conflict,exception.Message),
             DepartmentCampusUnavailableException => (StatusCodes.Status409Conflict,exception.Message),
+            HouseCodeConflictException => (StatusCodes.Status409Conflict,exception.Message),
+            HouseNameConflictException => (StatusCodes.Status409Conflict,exception.Message),
+            InvalidHouseStatusTransitionException => (StatusCodes.Status409Conflict,exception.Message),
+            HouseArchivedReadOnlyException => (StatusCodes.Status409Conflict,exception.Message),
+            SchoolCalendarCodeConflictException => (StatusCodes.Status409Conflict,exception.Message),
+            SchoolCalendarParentUnavailableException => (StatusCodes.Status409Conflict,exception.Message),
+            SchoolCalendarInvalidTransitionException => (StatusCodes.Status409Conflict,exception.Message),
+            SchoolCalendarArchivedReadOnlyException => (StatusCodes.Status409Conflict,exception.Message),
             ClassSubjectMismatchException => (StatusCodes.Status409Conflict,exception.Message),
             ConcurrencyConflictException => (StatusCodes.Status409Conflict, "The record was changed by another operation."),
             TenantSlugConflictException => (StatusCodes.Status409Conflict, "A tenant with this slug already exists."),
@@ -55,13 +64,14 @@ public sealed class PersistenceExceptionHandler(ILogger<PersistenceExceptionHand
         };
         if (status == 0) return false;
 
-        logger.LogWarning("Persistence operation rejected with status {StatusCode}. TraceId: {TraceId}", status, httpContext.TraceIdentifier);
+        var correlation=httpContext.Items[CorrelationIdMiddleware.ItemKey]?.ToString();
+        if(status is StatusCodes.Status400BadRequest or StatusCodes.Status404NotFound)logger.LogInformation("Request rejected with status {StatusCode}. CorrelationId {CorrelationId} RequestId {RequestId}",status,correlation,httpContext.TraceIdentifier);else logger.LogWarning("Request rejected with status {StatusCode}. CorrelationId {CorrelationId} RequestId {RequestId}",status,correlation,httpContext.TraceIdentifier);
         httpContext.Response.StatusCode = status;
         await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
         {
             Status = status,
             Title = title,
-            Extensions = { ["traceId"] = httpContext.TraceIdentifier }
+            Extensions = { ["correlationId"] = correlation, ["requestId"] = httpContext.TraceIdentifier }
         }, cancellationToken);
         return true;
     }

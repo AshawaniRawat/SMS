@@ -12,6 +12,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using SchoolERP.Api.Security;
+using SchoolERP.Api.Logging;
 namespace SchoolERP.Api.Extensions;
 public static class DependencyInjection
 {
@@ -89,6 +90,10 @@ public static class DependencyInjection
         });
         services.AddExceptionHandler<PersistenceExceptionHandler>();
         services.AddExceptionHandler<DatabaseExceptionHandler>();
+        services.AddExceptionHandler<UnhandledExceptionHandler>();
+        services.AddOptions<SchoolErpLoggingOptions>().Bind(configuration.GetSection(SchoolErpLoggingOptions.SectionName)).ValidateDataAnnotations().Validate(x=>!string.IsNullOrWhiteSpace(x.CorrelationHeaderName)&&!x.CorrelationHeaderName.Any(char.IsControl),"Correlation header name is invalid.").ValidateOnStart();
+        services.AddScoped<ICorrelationContext,HttpCorrelationContext>();
+        services.AddSingleton<ILogRedactor,LogRedactor>();
         services.AddHealthChecks();
         var jwtSection = configuration.GetSection(JwtOptions.SectionName);
         services.AddOptions<JwtOptions>().Bind(jwtSection)

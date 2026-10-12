@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
+using SchoolERP.Api.Logging;
 namespace SchoolERP.Api.Extensions;
 public static class PipelineExtensions
 {
     public static WebApplication UseApiPipeline(this WebApplication app)
     {
-        app.UseSerilogRequestLogging();
+        app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseExceptionHandler();
+        app.UseMiddleware<RequestLoggingMiddleware>();
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -22,6 +24,7 @@ public static class PipelineExtensions
         app.UseCors("Frontend");
         app.UseRateLimiter();
         app.UseAuthentication();
+        app.UseMiddleware<AuthenticatedRequestContextMiddleware>();
         app.UseAuthorization();
         app.MapControllers();
         app.MapHealthChecks("/api/health", new HealthCheckOptions

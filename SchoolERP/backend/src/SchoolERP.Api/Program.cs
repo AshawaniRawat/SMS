@@ -3,7 +3,7 @@ using SchoolERP.Application.Common;
 using SchoolERP.Infrastructure;
 using Serilog;
 var builder = WebApplication.CreateBuilder(args);
-builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration).WriteTo.Console());
+builder.Host.UseSerilog((context, logger) => logger.ReadFrom.Configuration(context.Configuration));
 builder.Services.AddApplicationServices().AddInfrastructureServices(builder.Configuration, builder.Environment).AddApiServices(builder.Configuration);
 var app = builder.Build();
 await app.ApplyDatabaseMigrationsAsync();
